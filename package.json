@@ -1,0 +1,16 @@
+{
+  "name": "LOCATION-BASED-CHAT",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+	  "test" : "mocha",  
+	  "start": "node app.js"
+  },
+  "dependencies": {
+	  "express": "3.x",
+	  "mongoose": "3.6.x",
+	  "superagent": "*",
+	  "should":"*",
+	  "mocha": "1.11.0"
+  }
+}
