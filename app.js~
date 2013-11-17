@@ -9,9 +9,6 @@ var app = express();
 app.use(express.bodyParser());
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
-//io.configure('development', function(){
-    io.set('transports', ['xhr-polling']);
-//});
 
 //var express = require('express')
 //, routes = require('./routes')
