@@ -23,7 +23,7 @@ describe('Getting Nearby Friends', function(){
         request
             .get(url+'/near/01001953010/2.33739/48.89364/100?')
             .end(function(res){
-            	console.log("<----"+JSON.stringify(res.body)+"----->");
+            	//console.log("<----"+JSON.stringify(res.body)+"----->");
                 res.should.be.json;
                 //res.body.result.should.eql(["demo", "temperature"]);
                 done();

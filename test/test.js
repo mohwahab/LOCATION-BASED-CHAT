@@ -6,6 +6,7 @@ var agent = require('should');
 var io = require('socket.io-client');
 
 var url = 'http://localhost:3000';
+var url = 'http://location-based-chat.herokuapp.com';
 
 
 var options ={
