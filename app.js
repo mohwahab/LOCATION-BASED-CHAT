@@ -2,7 +2,7 @@
 /**
  * Module dependencies.
  */
-var schema = 'users';
+//var schema = 'users';
 
 var express = require('express')
 var app = express();
@@ -26,7 +26,8 @@ var mongoose = require ("mongoose");
 //app.use(express.bodyParser());
 
 var User = require('./model/user.js');
-
+var dbUrl = 'mongodb://localhost/location_based_chat';
+mongoose.connect(dbUrl); 
 
 //app.configure('development', function() {
 //  mongoose.connect('mongodb://localhost/'+schema);
@@ -58,8 +59,44 @@ if ('development' == app.get('env')) {
   app.use(express.errorHandler());
 }
 
-app.get('/near/:numer/:lon/:lat/:dist?', function(req, res) {
-	console.log("<----"+req.method+" "+req.params.lon+" "+req.params.lat+" "+req.params.dist+"----->");
+app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
+	console.log("<----"+req.method+" "+req.params.name+" "+req.params.number+" "+req.params.long+" "+req.params.lat+" "+req.params.contacts+"----->");
+	User.register(req.params.name, req.params.number, req.params.long, req.params.lat, function(error,newUser){
+		if(error) {
+       	 	 console.log("ERROR: "+error);
+        } else {
+       	 	 console.log("New User Registered: "+newUser);
+       	 	User.model.find({},function(error,docs){
+       	 	if(error) {
+		         console.log("ERROR: "+error);
+	         } else {
+	        	 console.log("\nDOCS: \n"+docs+"\n");
+	         }
+       	 	});
+	       	 User.findContacts(newUser, req.params.contacts, function(error, userContacts){
+	       		if(error) {
+			         console.log("ERROR: "+error);
+		         } else {
+		        	 console.log("User Contacts: "+userContacts);
+		        	 newUser.contacts = userContacts;
+		 			 newUser.save();
+		 			 User.updateContacts(newUser,userContacts, function(error){
+		 			     if(error) {
+		 			    	 console.log("ERROR: "+error);
+		 			     }else{
+		 			    	 console.log("id: "+newUser._id);
+		 			    	 res.json({id:newUser._id});
+		 			     }
+		 			 });
+		         }
+	 		});
+        }
+	});
+});
+
+
+app.get('/near/:numer/:long/:lat/:dist?', function(req, res) {
+	console.log("<----"+req.method+" "+req.params.long+" "+req.params.lat+" "+req.params.dist+"----->");
 //	User.find({loc: { $near : [req.params.lon, req.params.lat], $maxDistance : req.params.dist/68.91}}, function(err, result) {
 //	    if (err) {
 //	      res.status(500);

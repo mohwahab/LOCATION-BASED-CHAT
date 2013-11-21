@@ -11,8 +11,8 @@
 	  "mongoose": "3.6.x",
 	  "superagent": "*",
 	  "should":"*",
-    "socket.io":"*",
-    "socket.io-client":"*",
+	  "socket.io":"*",
+	  "socket.io-client":"*",
 	  "mocha": "1.11.0"
   }
 }
