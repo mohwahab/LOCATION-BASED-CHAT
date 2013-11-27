@@ -2,7 +2,6 @@
  * Test file
  */
 var request = require('superagent');
-//var agent = require('should');
 var io = require('socket.io-client');
 var mongoose = require("mongoose");  
 var User = require("../model/user.js"); 
@@ -27,7 +26,7 @@ describe('User', function(){
 	
 	beforeEach(function(done){
 		User.model.remove({}, function() {
-			console.log("\nDATABASE CLEARED");
+			//console.log("\nDATABASE CLEARED");
 			//Add some test data
 			var Users = [
 			             	{ name: 'Ahmed Alaa', number: '01001252010', loc: { type: 'Point', coordinates:[ parseFloat(31.102711), parseFloat(30.018571)] }}, 	//In contacts & near 
@@ -56,7 +55,7 @@ describe('User', function(){
     afterEach(function(done){   
 	    //Clear Database
 	    User.model.remove({}, function() {
-		    console.log("\nDATABASE CLEARED");
+		    //console.log("\nDATABASE CLEARED");
 		    done();    
        });  
     });		
@@ -77,7 +76,7 @@ describe('User', function(){
 					        request
 					            .get(svrUrl+'/near/'+testUserId+'/31.102711/30.018571/10?')
 					            .end(function(res){
-					            	console.log("\n RESPONSE BODY: "+res.body);
+					            	//console.log("\n RESPONSE BODY: "+res.body);
 					                res.should.be.json;
 					                res.body.contacts.should.eql([   { number: '01001252010', loc: { type: 'Point', coordinates: [ 31.102711, 30.018571 ] }},
 					                                                 { number: '01208993983', loc: { type: 'Point', coordinates: [ 31.027054, 30.073254 ] }}//,
@@ -87,7 +86,7 @@ describe('User', function(){
 					                	if(error) {
 					   			         	console.log("\nGET RETRIEVED USER ERROR: "+error);
 					   		         	} else {
-					   		         		console.log("\nGET RETRIEVED USER: \n"+retrievedUser+"\n");
+					   		         		//console.log("\nGET RETRIEVED USER: \n"+retrievedUser+"\n");
 					   		         		retrievedUser.loc.coordinates.should.include(31.102711);
 					   		         		retrievedUser.loc.coordinates.should.include(30.018571);
 					   		         	}
@@ -110,7 +109,7 @@ describe('User', function(){
                 	if(error) {
    			         	console.log("\nGET NEW USER ERROR: "+error);
    		         	} else {
-   		         		console.log("\nGET NEW USER: \n"+newUser+"\n");
+   		         		//console.log("\nGET NEW USER: \n"+newUser+"\n");
 	                	newUser.name.should.equal("Abd El Wahab Mohamed");    
 	                	newUser.number.should.equal("01001953010");
 	                	newUser.loc.coordinates.should.include(31.099865);
@@ -120,7 +119,7 @@ describe('User', function(){
 	                		if(error) {
 	       			         	console.log("\nGET USER ERROR: "+error);
 	       		         	} else {
-	       		         		console.log("\nGET USER: \n"+retrievedUser+"\n");
+	       		         		//console.log("\nGET USER: \n"+retrievedUser+"\n");
 	       		         		newUser.contacts.should.include(retrievedUser._id);
 	       		         		retrievedUser.contacts.should.include(newUser._id);
 	       		         	}

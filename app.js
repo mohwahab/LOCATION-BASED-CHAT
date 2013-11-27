@@ -60,14 +60,14 @@ if ('development' == app.get('env')) {
 }
 
 app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
-	console.log("<----"+req.method+" "+req.params.name+" "+req.params.number+" "+req.params.long+" "+req.params.lat+" "+req.params.contacts+"----->");
+	console.log("[ "+req.method+" /register/"+req.params.name+"/"+req.params.number+"/"+req.params.long+"/"+req.params.lat+"/"+req.params.contacts+" ]");
 	User.register(req.params.name, req.params.number, req.params.long, req.params.lat, function(error,newUser){
 		if(error) {
        	 	console.log("ERROR register: "+error);
        	 	res.status(500);
        	 	res.send(error);
         } else {
-       	 	console.log("New User Registered: "+newUser);
+       	 	//console.log("New User Registered: "+newUser);
 //       	 	User.model.find({},function(error,docs){
 //       	 	if(error) {
 //		         console.log("ERROR: "+error);
@@ -102,8 +102,7 @@ app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 
 
 app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
-	console.log("<----"+req.method+" "+req.params.long+" "+req.params.lat+" "+req.params.dist+"----->");
-	//TODO Update user location
+	console.log("[ "+req.method+" /near/"+req.params.id+"/"+req.params.long+"/"+req.params.lat+"/"+req.params.dist+" ]");
 	//TODO Notify friends in region with his location 
 	User.findNearContacts(req.params.id, req.params.long, req.params.lat, req.params.dist, function(error, nearContacts){
 	     if(error) {
@@ -111,7 +110,7 @@ app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
 	    	 res.status(500);
        	 	 res.send(error);
 	     }else{
-	    	 console.log("NEAR CONTACTS: "+nearContacts+"\n\n");
+	    	 //console.log("NEAR CONTACTS: "+nearContacts+"\n\n");
 	    	 res.json({contacts : nearContacts});
 	     }
 	 });
