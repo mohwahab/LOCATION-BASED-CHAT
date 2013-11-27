@@ -23,157 +23,141 @@ var options ={
 
 describe('User', function(){
     
-//	beforeEach(function(done){    
-//	    //Add some test data
-//		var Users = [
-//		             	{ name: 'Ahmed Alaa', number: '01001252010', loc: [ parseFloat(30.018571), parseFloat(31.102711)] }, 	//In contacts & near 
-//		             	{ name: 'Karim Fahmy', number: '01208993983', loc: [ parseFloat(30.073254), parseFloat(31.027054)] },	//In contacts & near
-//		             	{ name: 'Abdullah zaki', number: '01108993983', loc: [ parseFloat(30.121395), parseFloat(32.099865)] },	//In contacts & Far
-//		             	{ name: 'Sarah Ahmed', number: '01008993983', loc: [ parseFloat(2.33739), parseFloat(48.89364)] }		//Out of contacts
-//		            ];
-//		Users.forEach(function(user){
-//			User.model.create(user,function(error,newUser){
-//				if(error) {
-//			         console.log("\nADD USER ERROR: "+error);
-//				} else {
-//					console.log("\nNEW USER ADDED: \n"+newUser+"\n");
-//				}
-//		    });
-//		});
-//		done();
-//	  });  
+	var testUsers = {};
+	
+	beforeEach(function(done){
+		User.model.remove({}, function() {
+			console.log("\nDATABASE CLEARED");
+			//Add some test data
+			var Users = [
+			             	{ name: 'Ahmed Alaa', number: '01001252010', loc: { type: 'Point', coordinates:[ parseFloat(31.102711), parseFloat(30.018571)] }}, 	//In contacts & near 
+			             	{ name: 'Karim Fahmy', number: '01208993983', loc: { type: 'Point', coordinates: [ parseFloat(31.027054), parseFloat(30.073254)] }},	//In contacts & near
+			             	{ name: 'Abdullah zaki', number: '01108993983', loc: { type: 'Point', coordinates: [ parseFloat(32.099865), parseFloat(30.121395)] }},	//In contacts & Far
+			             	{ name: 'Sarah Ahmed', number: '01008993983', loc: { type: 'Point', coordinates: [ parseFloat(48.89364), parseFloat(2.33739)] }}		//Out of contacts
+			            ];
+			async.forEach(Users , function (user, done){ 
+				User.model.create(user,function(error,newUser){
+					if(error) {
+				         console.log("\nADD USER ERROR: "+error);
+					} else {
+						//console.log("\nNEW USER ADDED: \n"+newUser+"\n");
+						testUsers[newUser.number] = newUser._id;
+						done();
+					}
+			    });
 
-	beforeEach(function(done){    
-	    //Add some test data
-		var Users = [
-		             	{ name: 'Ahmed Alaa', number: '01001252010', loc: [ parseFloat(30.018571), parseFloat(31.102711)] }, 	//In contacts & near 
-		             	{ name: 'Karim Fahmy', number: '01208993983', loc: [ parseFloat(30.073254), parseFloat(31.027054)] },	//In contacts & near
-		             	{ name: 'Abdullah zaki', number: '01108993983', loc: [ parseFloat(30.121395), parseFloat(32.099865)] },	//In contacts & Far
-		             	{ name: 'Sarah Ahmed', number: '01008993983', loc: [ parseFloat(2.33739), parseFloat(48.89364)] }		//Out of contacts
-		            ];
-		async.forEach(Users , function (user, done){ 
-			User.model.create(user,function(error,newUser){
+			}, function(error) {
+				done();
+			}); 
+    
+	    });  
+	});  
+	
+    afterEach(function(done){   
+	    //Clear Database
+	    User.model.remove({}, function() {
+		    console.log("\nDATABASE CLEARED");
+		    done();    
+       });  
+    });		
+		
+    it("Should be able to return nearby friends  ", function(done){
+    	var testUserId = null;
+    	var testUser = { name: 'Mohamed Abd El Wahab', number: '01001953010', loc: { type: 'Point', coordinates: [ parseFloat(41.102711), parseFloat(40.018571)] }};
+    	User.model.create(testUser,function(error,user){
 				if(error) {
 			         console.log("\nADD USER ERROR: "+error);
 				} else {
-					console.log("\nNEW USER ADDED: \n"+newUser+"\n");
-					done();
-				}
-		    });
-
-		}, function(error) {
-			done();
-		}); 
-	  });  
-	
-	  afterEach(function(done){   
-		  //Clear Database
-		  User.model.remove({}, function() {
-			  console.log("\nDATABASE CLEARED");
-			  done();    
-	    });  
-	  });		
-		
-//	it("Should register a new user", function(done){    
-//	    user.register("Mohamed Abd El Wahab", "01001252010", 2.33739, 48.89364, function(doc){      
-//	      doc.name.should.equal("Mohamed Abd El Wahab");      
-//	      doc.number.should.equal("01001252010");      
-//	      doc.loc.should.include(2.33739);
-//	      doc.loc.should.include(48.89364);
-//	      done();    
-//	    }, function(message){      
-//	      message.should.equal(null);      
-//	      done();    
-//	    }); 
-//	  }); 
-//	
-//    it("Should return nearby friends  ", function(done){
-//        //this.timeout(100000);
-//        request
-//            .get(svrUrl+'/near/01001953010/2.33739/48.89364/100?')
-//            .end(function(res){
-//            	//console.log("<----"+JSON.stringify(res.body)+"----->");
-//                res.should.be.json;
-//                //res.body.result.should.eql(["demo", "temperature"]);
-//                done();
-//            });
-//    });
+					testUserId = user._id;
+					//this.timeout(100000);
+					User.model.update({_id: user._id}, {$pushAll: {contacts:[testUsers['01001252010'],testUsers['01208993983'],testUsers['01108993983']]}}, function(error,user){
+						if(error) {
+					         console.log("\nADD USER CONTACTS ERROR: "+error);
+						} else {
+					        request
+					            .get(svrUrl+'/near/'+testUserId+'/31.102711/30.018571/10?')
+					            .end(function(res){
+					            	console.log("\n RESPONSE BODY: "+res.body);
+					                res.should.be.json;
+					                res.body.contacts.should.eql([   { number: '01001252010', loc: { type: 'Point', coordinates: [ 31.102711, 30.018571 ] }},
+					                                                 { number: '01208993983', loc: { type: 'Point', coordinates: [ 31.027054, 30.073254 ] }}//,
+					                                                 //{ number: '01108993983', loc: [ 32.099865, 30.121395 ] }
+					                                             ]);
+					                User.model.findById(testUserId, function(error, retrievedUser) {
+					                	if(error) {
+					   			         	console.log("\nGET RETRIEVED USER ERROR: "+error);
+					   		         	} else {
+					   		         		console.log("\nGET RETRIEVED USER: \n"+retrievedUser+"\n");
+					   		         		retrievedUser.loc.coordinates.should.include(31.102711);
+					   		         		retrievedUser.loc.coordinates.should.include(30.018571);
+					   		         	}
+					   		        });
+					                done();
+					            });
+						}
+					});
+			}
+    	});
+    });
+    
     it("Should be able to register a new user", function(done){
         //this.timeout(100000);
         request
-            .get(svrUrl+'/register/Abd El Wahab Mohamed/01001953010/30.021395/31.099865/["01001252010","01208993983","01108993983"]?')
+            .get(svrUrl+'/register/Abd El Wahab Mohamed/01001953010/31.099865/30.021395/["01001252010","01208993983","01108993983"]?')
             .end(function(res){
-            	console.log("<----"+JSON.stringify(res.body)+"----->");
-            	console.log("<--ID--"+res.body.id+"---ID-->");
                 res.should.be.json;
                 User.model.findById(res.body.id, function(error, newUser) {
-                	console.log("<--XX--"+newUser+"---XX-->");
-                	newUser.name.should.equal("Abd El Wahab Mohamed");    
-                	newUser.number.should.equal("01001953010");
-                	newUser.loc.should.include(30.021395);
-                	newUser.loc.should.include(31.099865);
-                	User.model.findOne({'number':'01001252010'},function(error,retrievedUser){ 
-                		if(error) {
-       			         	console.log("\nGET USER ERROR: "+error);
-       		         	} else {
-       		         		console.log("\nGET USER: \n"+retrievedUser+"\n");
-       		         		newUser.contacts.should.include(retrievedUser._id);
-       		         		retrievedUser.contacts.should.include(newUser._id);
-       		         	}
-                	});
-                	User.model.findOne({'number':'01208993983'},function(error,retrievedUser){ 
-                		if(error) {
-       			         	console.log("\nGET USER ERROR: "+error);
-       		         	} else {
-       		         		console.log("\nGET USER: \n"+retrievedUser+"\n");
-       		         		newUser.contacts.should.include(retrievedUser._id);
-       		         		retrievedUser.contacts.should.include(newUser._id);
-       		         	}
-                	});
-                	User.model.findOne({'number':'01108993983'},function(error,retrievedUser){ 
-                		if(error) {
-       			         	console.log("\nGET USER ERROR: "+error);
-       		         	} else {
-       		         		console.log("\nGET USER: \n"+retrievedUser+"\n");
-       		         		newUser.contacts.should.include(retrievedUser._id);
-       		         		retrievedUser.contacts.should.include(newUser._id);
-       		         	}
-                	});
-                	User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
-                		if(error) {
-       			         	console.log("\nGET USER ERROR: "+error);
-       		         	} else {
-       		         		console.log("\nGET USER: \n"+retrievedUser+"\n");
-       		         		newUser.contacts.should.not.include(retrievedUser._id);
-       		         		retrievedUser.contacts.should.not.include(newUser._id);
-       		         	}
-                	});
+                	if(error) {
+   			         	console.log("\nGET NEW USER ERROR: "+error);
+   		         	} else {
+   		         		console.log("\nGET NEW USER: \n"+newUser+"\n");
+	                	newUser.name.should.equal("Abd El Wahab Mohamed");    
+	                	newUser.number.should.equal("01001953010");
+	                	newUser.loc.coordinates.should.include(31.099865);
+	                	newUser.loc.coordinates.should.include(30.021395);
+	                	res.body.id.should.equal(newUser._id.toString());
+	                	User.model.findOne({'number':'01001252010'},function(error,retrievedUser){ 
+	                		if(error) {
+	       			         	console.log("\nGET USER ERROR: "+error);
+	       		         	} else {
+	       		         		console.log("\nGET USER: \n"+retrievedUser+"\n");
+	       		         		newUser.contacts.should.include(retrievedUser._id);
+	       		         		retrievedUser.contacts.should.include(newUser._id);
+	       		         	}
+	                	});
+	                	User.model.findOne({'number':'01208993983'},function(error,retrievedUser){ 
+	                		if(error) {
+	       			         	console.log("\nGET USER ERROR: "+error);
+	       		         	} else {
+	       		         		//console.log("\nGET USER: \n"+retrievedUser+"\n");
+	       		         		newUser.contacts.should.include(retrievedUser._id);
+	       		         		retrievedUser.contacts.should.include(newUser._id);
+	       		         	}
+	                	});
+	                	User.model.findOne({'number':'01108993983'},function(error,retrievedUser){ 
+	                		if(error) {
+	       			         	console.log("\nGET USER ERROR: "+error);
+	       		         	} else {
+	       		         		//console.log("\nGET USER: \n"+retrievedUser+"\n");
+	       		         		newUser.contacts.should.include(retrievedUser._id);
+	       		         		retrievedUser.contacts.should.include(newUser._id);
+	       		         	}
+	                	});
+	                	User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
+	                		if(error) {
+	       			         	console.log("\nGET USER ERROR: "+error);
+	       		         	} else {
+	       		         		//console.log("\nGET USER: \n"+retrievedUser+"\n");
+	       		         		newUser.contacts.should.not.include(retrievedUser._id);
+	       		         		retrievedUser.contacts.should.not.include(newUser._id);
+	       		         	}
+	                	});
+   		         	}
                     done();
                  });
             });
     });
 });
-
-// Routes
-//app.get(url+'/near/:lon/:lat/:dist?', function(req, res) {
-//	User.find({loc: { $near : [req.params.lon, req.params.lat], $maxDistance : req.params.dist/68.91}}, function(err, result) {
-//    if (err) {
-//      res.status(500);
-//      res.send(err);
-//    } else {
-//      res.send({result: result});
-//    }
-//  });
-//});
-
-//startup server
-//port = process.env.PORT || 3000;
-//app.listen(port, function() {
-//  console.log("Listening on port number: ", port);
-//});
-//
-//module.exports = app;
-
 
 //describe("Chat Server",function(){
 //  it('Should be able to send receive and forward messages', function(done){

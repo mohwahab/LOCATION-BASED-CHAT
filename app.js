@@ -63,28 +63,34 @@ app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 	console.log("<----"+req.method+" "+req.params.name+" "+req.params.number+" "+req.params.long+" "+req.params.lat+" "+req.params.contacts+"----->");
 	User.register(req.params.name, req.params.number, req.params.long, req.params.lat, function(error,newUser){
 		if(error) {
-       	 	 console.log("ERROR: "+error);
+       	 	console.log("ERROR register: "+error);
+       	 	res.status(500);
+       	 	res.send(error);
         } else {
-       	 	 console.log("New User Registered: "+newUser);
-       	 	User.model.find({},function(error,docs){
-       	 	if(error) {
-		         console.log("ERROR: "+error);
-	         } else {
-	        	 console.log("\nDOCS: \n"+docs+"\n");
-	         }
-       	 	});
+       	 	console.log("New User Registered: "+newUser);
+//       	 	User.model.find({},function(error,docs){
+//       	 	if(error) {
+//		         console.log("ERROR: "+error);
+//	         } else {
+//	        	 console.log("\nDOCS: \n"+docs+"\n");
+//	         }
+//       	 	});
 	       	 User.findContacts(newUser, req.params.contacts, function(error, userContacts){
 	       		if(error) {
 			         console.log("ERROR: "+error);
+			         res.status(500);
+			       	 res.send(error);
 		         } else {
-		        	 console.log("User Contacts: "+userContacts);
+		        	 //console.log("User Contacts: "+userContacts);
 		        	 newUser.contacts = userContacts;
 		 			 newUser.save();
 		 			 User.updateContacts(newUser,userContacts, function(error){
 		 			     if(error) {
 		 			    	 console.log("ERROR: "+error);
+		 			    	 res.status(500);
+		 		       	 	 res.send(error);
 		 			     }else{
-		 			    	 console.log("id: "+newUser._id);
+		 			    	 //console.log("id: "+newUser._id);
 		 			    	 res.json({id:newUser._id});
 		 			     }
 		 			 });
@@ -95,34 +101,20 @@ app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 });
 
 
-app.get('/near/:numer/:long/:lat/:dist?', function(req, res) {
+app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
 	console.log("<----"+req.method+" "+req.params.long+" "+req.params.lat+" "+req.params.dist+"----->");
-//	User.find({loc: { $near : [req.params.lon, req.params.lat], $maxDistance : req.params.dist/68.91}}, function(err, result) {
-//	    if (err) {
-//	      res.status(500);
-//	      res.send(err);
-//	    } else {
-//	      res.send({result: result});
-//	    }
-//	});
-	var result = { 
-					contacts :[
-						          {
-				                	   name : 'Ahmed Alaa', position : [30.018571,31.102711]
-				                  },
-				                  {	  
-				                	  name : 'Karim Fahmy', position : [30.073254,31.027054]
-				                  },
-				                  {	  
-				                	  name : 'Abdullah zaki', position : [30.121395, 32.099865]
-				                  },
-				                  {	  
-				                	  name : 'Mohamed Abd El Wahab', position : [30.021395,31.099865]
-				                  }
-				              ]
-	};
-	res.json(result);
-	
+	//TODO Update user location
+	//TODO Notify friends in region with his location 
+	User.findNearContacts(req.params.id, req.params.long, req.params.lat, req.params.dist, function(error, nearContacts){
+	     if(error) {
+	    	 console.log("ERROR: "+error);
+	    	 res.status(500);
+       	 	 res.send(error);
+	     }else{
+	    	 console.log("NEAR CONTACTS: "+nearContacts+"\n\n");
+	    	 res.json({contacts : nearContacts});
+	     }
+	 });
 });
 
 io.sockets.on('connection', function (socket) {
