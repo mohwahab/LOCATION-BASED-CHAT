@@ -20,46 +20,47 @@ var options ={
   'force new connection': true
 }; 
 
-describe('User', function(){
-    
-	var testUsers = {};
-	
-	beforeEach(function(done){
-		User.model.remove({}, function() {
-			//console.log("\nDATABASE CLEARED");
-			//Add some test data
-			var Users = [
-			             	{ name: 'Ahmed Alaa', number: '01001252010', loc: { type: 'Point', coordinates:[ parseFloat(31.102711), parseFloat(30.018571)] }}, 	//In contacts & near 
-			             	{ name: 'Karim Fahmy', number: '01208993983', loc: { type: 'Point', coordinates: [ parseFloat(31.027054), parseFloat(30.073254)] }},	//In contacts & near
-			             	{ name: 'Abdullah zaki', number: '01108993983', loc: { type: 'Point', coordinates: [ parseFloat(32.099865), parseFloat(30.121395)] }},	//In contacts & Far
-			             	{ name: 'Sarah Ahmed', number: '01008993983', loc: { type: 'Point', coordinates: [ parseFloat(48.89364), parseFloat(2.33739)] }}		//Out of contacts
-			            ];
-			async.forEach(Users , function (user, done){ 
-				User.model.create(user,function(error,newUser){
-					if(error) {
-				         console.log("\nADD USER ERROR: "+error);
-					} else {
-						//console.log("\nNEW USER ADDED: \n"+newUser+"\n");
-						testUsers[newUser.number] = newUser._id;
-						done();
-					}
-			    });
 
-			}, function(error) {
-				done();
-			}); 
-    
-	    });  
-	});  
-	
-    afterEach(function(done){   
-	    //Clear Database
-	    User.model.remove({}, function() {
-		    //console.log("\nDATABASE CLEARED");
-		    done();    
-       });  
-    });		
-		
+var testUsers = {};
+
+beforeEach(function(done){
+	User.model.remove({}, function() {
+		//console.log("\nDATABASE CLEARED");
+		//Add some test data
+		var Users = [
+		             	{ name: 'Ahmed Alaa', number: '01001252010', loc: { type: 'Point', coordinates:[ parseFloat(31.102711), parseFloat(30.018571)] }}, 	//In contacts & near 
+		             	{ name: 'Karim Fahmy', number: '01208993983', loc: { type: 'Point', coordinates: [ parseFloat(31.027054), parseFloat(30.073254)] }},	//In contacts & near
+		             	{ name: 'Abdullah zaki', number: '01108993983', loc: { type: 'Point', coordinates: [ parseFloat(32.099865), parseFloat(30.121395)] }},	//In contacts & Far
+		             	{ name: 'Sarah Ahmed', number: '01008993983', loc: { type: 'Point', coordinates: [ parseFloat(48.89364), parseFloat(2.33739)] }}		//Out of contacts
+		            ];
+		async.forEach(Users , function (user, done){ 
+			User.model.create(user,function(error,newUser){
+				if(error) {
+			         console.log("\nADD USER ERROR: "+error);
+				} else {
+					//console.log("\nNEW USER ADDED: \n"+newUser+"\n");
+					testUsers[newUser.number] = newUser._id;
+					done();
+				}
+		    });
+
+		}, function(error) {
+			done();
+		}); 
+
+    });  
+});  
+
+afterEach(function(done){   
+    //Clear Database
+    User.model.remove({}, function() {
+	    //console.log("\nDATABASE CLEARED");
+	    done();    
+   });  
+});		
+
+describe('User', function(){
+			
     it("Should be able to return nearby friends  ", function(done){
     	var testUserId = null;
     	var testUser = { name: 'Mohamed Abd El Wahab', number: '01001953010', loc: { type: 'Point', coordinates: [ parseFloat(41.102711), parseFloat(40.018571)] }};
@@ -158,32 +159,41 @@ describe('User', function(){
     });
 });
 
-//describe("Chat Server",function(){
-//  it('Should be able to send receive and forward messages', function(done){
-//	  this.timeout(300000);  
-//	  var message = {from: 'Mohamed Abd El Wahab', txt:'Hello Back'};
-//	  var messages = 0;
-//
-//	  var completeTest = function(client){
-//		  messages.should.equal(1);
-//		  client.disconnect();
-//		  done();
-//	  };
-//
-//	  var checkMessage = function(client){
-//		  client.on('message', function(msg){
-//			  message.txt.should.equal(msg.txt);
-//			  msg.from.should.equal(message.from);
-//			  messages++;
-//			  completeTest(client);
-//		  });
-//	  };
-//
-//	  client = io.connect(svrUrl, options);
-//
-//	  client.on('connect', function(socket){
-//		  client.emit('message', "Hello Server");
-//		  checkMessage(client);
-//	  });
-//  });
-//});
+describe("Chat Server",function(){
+  it('Should be able to receive and forward messages', function(done){
+	  this.timeout(300000);  
+	  var user1;
+	  var user2;
+	  
+	  User.model.findOne({'number':'01001252010'},function(error,retrievedUser1){ 
+  		if(error) {
+		    console.log("\nGET CHAT USER ERROR: "+error);
+     	} else {
+     		User.model.findOne({'number':'01008993983'},function(error,retrievedUser2){ 
+     	  		if(error) {
+     			    console.log("\nGET CHAT USER ERROR: "+error);
+     	     	} else {
+     	     		user1 = io.connect(svrUrl, options);
+     	     	    user2 = io.connect(svrUrl, options);
+     	     		user1.on('connect', function(data){
+     	     			user1.emit('chat',{id:retrievedUser1._id});
+     	     			user1.emit('message', {to:'01008993983', txt:'Hello Sarah ;)'});
+     	     		});
+     	     		user1.on('message', function(msg){
+     	     			msg.should.eql({from:'01008993983', txt:'Hello Ahmed :)'});
+     	     			user1.disconnect();
+     	     			user2.disconnect();
+     	     			done();
+     	     		});
+     	     		user2.on('connect', function(data){
+     	     			user2.emit('chat',{id:retrievedUser2._id}); 
+     	     		});
+     	     		user2.on('message', function(msg){
+     	     			user2.emit('message', {to:'01001252010', txt:'Hello Ahmed :)'});
+     	     		});
+     	     	}
+     	  	});
+     	}
+  	  });
+  });
+});

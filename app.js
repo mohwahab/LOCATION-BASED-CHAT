@@ -13,6 +13,9 @@ var io = require('socket.io').listen(server);
     io.set('transports', ['xhr-polling']);
 //});
 
+var socketMap = {};
+var userMap = {};
+    
 //var express = require('express')
 //, routes = require('./routes')
 //, user = require('./routes/user')
@@ -117,12 +120,27 @@ app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
 });
 
 io.sockets.on('connection', function (socket) {
-  console.log('<-------------- Client connected ----------->');
+  console.log('[ -------------- CLIENT CONNECTED ----------- ]');
+  socket.on('chat', function(user){
+	  User.model.findById(user.id, function(error, chatter) {
+      	if(error) {
+		         	console.log("\nCHAT GET USER ERROR: "+error);
+	         	} else {
+	         	    delete socketMap[chatter.number];
+	         	    delete userMap[socket.id];
+	         		socketMap[chatter.number] = socket;
+	         		userMap[socket.id] = chatter.number;
+	         	}
+	  });
+  });
   socket.on('message', function(msg){
-    io.sockets.emit('message', {from: 'Mohamed Abd El Wahab', txt:'Hello Back'});
+    fwMsg = {from:userMap[socket.id], txt:msg.txt}
+    socketMap[msg.to].emit('message', fwMsg);
   });
   socket.on('disconnect', function(){
-    console.log('<-------------- Client disconnected ----------->');
+    console.log('[ -------------- CLIENT DISCONNECTED ----------- ]');
+    delete socketMap[userMap[socket.id]];
+    delete userMap[socket.id];
   });
 });
 
