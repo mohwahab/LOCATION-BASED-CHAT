@@ -30,6 +30,7 @@ var mongoose = require ("mongoose");
 
 var User = require('./model/user.js');
 var dbUrl = 'mongodb://localhost/location_based_chat';
+var dbUrl = 'mongodb://mwahab:mwahab123@paulo.mongohq.com:10075/location_based_chat';
 mongoose.connect(dbUrl); 
 
 //app.configure('development', function() {
