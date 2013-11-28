@@ -8,10 +8,10 @@ var User = require("../model/user.js");
 var async = require("async");
 
 
-var svrUrl = 'http://localhost:3000';
-//var url = 'http://location-based-chat.herokuapp.com';
+//var svrUrl = 'http://localhost:3000';
+var svrurl = 'http://location-based-chat.herokuapp.com';
 
-var dbUrl = 'mongodb://localhost/location_based_chat';
+//var dbUrl = 'mongodb://localhost/location_based_chat';
 var dbUrl = 'mongodb://mwahab:mwahab123@paulo.mongohq.com:10075/location_based_chat';
 mongoose.connect(dbUrl); 
 
