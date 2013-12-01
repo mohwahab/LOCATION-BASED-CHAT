@@ -7,6 +7,7 @@ var User = function(){
 	console.log('    mongoose version: %s', mongoose.version);
 	var userSchema = new Schema({
 	  name:  String,
+	  //socketId: { type: String, unique: true },
 	  number: { type: String, unique: true },
 	  lastUpdated: { type: Date, default: Date.now },
 	  contacts: [{ type: Schema.Types.ObjectId, ref: 'User'}],
@@ -74,6 +75,16 @@ var User = function(){
 		    });
 	   };
 	   
+//	   var _addUserSocket = function(id, socketId, callback){
+//		   _model.findById(user.id, function(error, user) {
+//			      	if(error) {
+//					         	console.log("\nCHAT GET USER ERROR: "+error);
+//				         	} else {
+//				         		user.socketId = socketId;
+//				         		user.save();
+//				         	}
+//				  });
+//	   };
 	return {
 		register: _register,
 	    schema: userSchema,

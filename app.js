@@ -127,8 +127,8 @@ io.sockets.on('connection', function (socket) {
       	if(error) {
 		         	console.log("\nCHAT GET USER ERROR: "+error);
 	         	} else {
-	         	    delete socketMap[chatter.number];
-	         	    delete userMap[socket.id];
+	         	    //delete socketMap[chatter.number];
+	         	    //delete userMap[socket.id];
 	         		socketMap[chatter.number] = socket;
 	         		userMap[socket.id] = chatter.number;
 	         	}
@@ -136,7 +136,13 @@ io.sockets.on('connection', function (socket) {
   });
   socket.on('message', function(msg){
     fwMsg = {from:userMap[socket.id], txt:msg.txt}
-    socketMap[msg.to].emit('message', fwMsg);
+    console.log("\nCHAT SEND MSG msg: "+msg);
+    console.log("\nCHAT SEND MSG msg.to: "+msg.to);
+    console.log("\nCHAT SEND MSG socketMap[msg.to]: "+socketMap[msg.to]);
+    //if(!socketMap[msg.to]){
+    if(msg.to !== undefined && socketMap[msg.to] !== undefined){
+    	socketMap[msg.to].emit('message', fwMsg);
+    }
   });
   socket.on('disconnect', function(){
     console.log('[ -------------- CLIENT DISCONNECTED ----------- ]');

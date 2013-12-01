@@ -8,11 +8,11 @@ var User = require("../model/user.js");
 var async = require("async");
 
 
-//var svrUrl = 'http://localhost:3000';
-var svrurl = 'http://location-based-chat.herokuapp.com';
+var svrUrl = 'http://localhost:3000';
+//var svrUrl = 'http://location-based-chat.herokuapp.com';
 
-//var dbUrl = 'mongodb://localhost/location_based_chat';
-var dbUrl = 'mongodb://mwahab:mwahab123@paulo.mongohq.com:10075/location_based_chat';
+var dbUrl = 'mongodb://localhost/location_based_chat';
+//var dbUrl = 'mongodb://mwahab:mwahab123@paulo.mongohq.com:10075/location_based_chat';
 mongoose.connect(dbUrl); 
 
 
@@ -25,6 +25,7 @@ var options ={
 var testUsers = {};
 
 beforeEach(function(done){
+	this.timeout(300000);
 	User.model.remove({}, function() {
 		//console.log("\nDATABASE CLEARED");
 		//Add some test data
@@ -52,7 +53,8 @@ beforeEach(function(done){
     });  
 });  
 
-afterEach(function(done){   
+afterEach(function(done){
+	this.timeout(300000);
     //Clear Database
     User.model.remove({}, function() {
 	    //console.log("\nDATABASE CLEARED");
