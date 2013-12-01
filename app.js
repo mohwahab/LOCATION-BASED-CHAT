@@ -14,6 +14,7 @@ var io = require('socket.io').listen(server);
 //});
 
 var socketMap = {};
+var msgMap = {};
 var userMap = {};
     
 //var express = require('express')
@@ -131,6 +132,12 @@ io.sockets.on('connection', function (socket) {
 	         	    //delete userMap[socket.id];
 	         		socketMap[chatter.number] = socket;
 	         		userMap[socket.id] = chatter.number;
+	         		if(msgMap[chatter.number]!== undefined){
+	         			msgMap[chatter.number].forEach(function(msg){
+	         				socket.emit('message', msg);
+	         			});
+	         			msgMap[chatter.number] = [];
+	         		}
 	         	}
 	  });
   });
@@ -142,6 +149,13 @@ io.sockets.on('connection', function (socket) {
     //if(!socketMap[msg.to]){
     if(msg.to !== undefined && socketMap[msg.to] !== undefined){
     	socketMap[msg.to].emit('message', fwMsg);
+    }else{
+    	console.log("\nCHAT SEND MSG: SOCKET IS NULL ");
+    	if(msgMap[msg.to] === undefined){
+    		console.log("\nCHAT SEND MSG: SOCKET IS NULL --> CREATE MSG ARRAY");
+    		msgMap[msg.to] = [];
+    	}
+    	msgMap[msg.to].push(fwMsg);
     }
   });
   socket.on('disconnect', function(){
