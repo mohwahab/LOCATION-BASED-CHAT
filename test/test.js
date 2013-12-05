@@ -1,6 +1,9 @@
 /**
  * Test file
  */
+
+var common = require('../util/common');
+var config = common.config();
 var request = require('superagent');
 var io = require('socket.io-client');
 var mongoose = require("mongoose");  
@@ -9,10 +12,12 @@ var async = require("async");
 
 
 //var svrUrl = 'http://localhost:3000';
-var svrUrl = 'http://location-based-chat.herokuapp.com';
+//var svrUrl = 'http://location-based-chat.herokuapp.com';
+var svrUrl = config.svr_url;
 
 //var dbUrl = 'mongodb://localhost/location_based_chat';
-var dbUrl = 'mongodb://mwahab:mwahab123@paulo.mongohq.com:10075/location_based_chat';
+//var dbUrl = 'mongodb://mwahab:mwahab123@paulo.mongohq.com:10075/location_based_chat';
+var dbUrl = config.db_url;
 mongoose.connect(dbUrl); 
 
 

@@ -3,8 +3,8 @@
  * Module dependencies.
  */
 //var schema = 'users';
-
-var express = require('express')
+var log = require('loglevel');
+var express = require('express');
 var app = express();
 app.use(express.bodyParser());
 var server = require('http').createServer(app);
@@ -30,8 +30,16 @@ var mongoose = require ("mongoose");
 //app.use(express.bodyParser());
 
 var User = require('./model/user.js');
+
+var common = require('./util/common');
+var config = common.config();
+
 //var dbUrl = 'mongodb://localhost/location_based_chat';
-var dbUrl = 'mongodb://mwahab:mwahab123@paulo.mongohq.com:10075/location_based_chat';
+//var dbUrl = 'mongodb://mwahab:mwahab123@paulo.mongohq.com:10075/location_based_chat';
+
+log.setLevel(config.log_level);
+
+var dbUrl = config.db_url;
 mongoose.connect(dbUrl); 
 
 //app.configure('development', function() {
@@ -65,10 +73,10 @@ if ('development' == app.get('env')) {
 }
 
 app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
-	console.log("[ "+req.method+" /register/"+req.params.name+"/"+req.params.number+"/"+req.params.long+"/"+req.params.lat+"/"+req.params.contacts+" ]");
+	log.info("[ "+req.method+" /register/"+req.params.name+"/"+req.params.number+"/"+req.params.long+"/"+req.params.lat+"/"+req.params.contacts+" ]");
 	User.register(req.params.name, req.params.number, req.params.long, req.params.lat, function(error,newUser){
 		if(error) {
-       	 	console.log("ERROR register: "+error);
+			log.error("ERROR register: "+error);
        	 	res.status(500);
        	 	res.send(error);
         } else {
@@ -82,7 +90,7 @@ app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 //       	 	});
 	       	 User.findContacts(newUser, req.params.contacts, function(error, userContacts){
 	       		if(error) {
-			         console.log("ERROR: "+error);
+	       			 log.error("ERROR: "+error);
 			         res.status(500);
 			       	 res.send(error);
 		         } else {
@@ -91,7 +99,7 @@ app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 		 			 newUser.save();
 		 			 User.updateContacts(newUser,userContacts, function(error){
 		 			     if(error) {
-		 			    	 console.log("ERROR: "+error);
+		 			    	 log.error("ERROR: "+error);
 		 			    	 res.status(500);
 		 		       	 	 res.send(error);
 		 			     }else{
@@ -107,11 +115,11 @@ app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 
 
 app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
-	console.log("[ "+req.method+" /near/"+req.params.id+"/"+req.params.long+"/"+req.params.lat+"/"+req.params.dist+" ]");
+	log.info("[ "+req.method+" /near/"+req.params.id+"/"+req.params.long+"/"+req.params.lat+"/"+req.params.dist+" ]");
 	//TODO Notify friends in region with his location 
 	User.findNearContacts(req.params.id, req.params.long, req.params.lat, req.params.dist, function(error, nearContacts){
 	     if(error) {
-	    	 console.log("ERROR: "+error);
+	    	 log.error("ERROR: "+error);
 	    	 res.status(500);
        	 	 res.send(error);
 	     }else{
@@ -122,19 +130,21 @@ app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
 });
 
 io.sockets.on('connection', function (socket) {
-  console.log('[ -------------- CLIENT CONNECTED ----------- ]');
+  log.debug('[ -------------- CLIENT CONNECTED ----------- ]');
   socket.on('chat', function(user){
 	  User.model.findById(user.id, function(error, chatter) {
       	if(error) {
-		         	console.log("\nCHAT GET USER ERROR: "+error);
+      			log.error("\nCHAT GET USER ERROR: "+error);
 	         	} else {
 	         	    //delete socketMap[chatter.number];
 	         	    //delete userMap[socket.id];
+	         		log.debug(chatter.number+" REGISTERED FOR CHAT");
 	         		socketMap[chatter.number] = socket;
 	         		userMap[socket.id] = chatter.number;
 	         		if(msgMap[chatter.number]!== undefined){
 	         			msgMap[chatter.number].forEach(function(msg){
 	         				socket.emit('message', msg);
+	         				log.debug("GOING TO SEND: "+msg.txt);
 	         			});
 	         			msgMap[chatter.number] = [];
 	         		}
@@ -143,28 +153,29 @@ io.sockets.on('connection', function (socket) {
   });
   socket.on('message', function(msg){
     fwMsg = {from:userMap[socket.id], txt:msg.txt}
-    console.log("\nCHAT SEND MSG msg: "+msg);
-    console.log("\nCHAT SEND MSG msg.to: "+msg.to);
-    console.log("\nCHAT SEND MSG socketMap[msg.to]: "+socketMap[msg.to]);
+    log.debug("\nCHAT SEND MSG msg: "+msg);
+    log.debug("\nCHAT SEND MSG msg.to: "+msg.to);
+    log.debug("\nCHAT SEND MSG socketMap[msg.to]: "+socketMap[msg.to]);
     //if(!socketMap[msg.to]){
     if(msg.to !== undefined && socketMap[msg.to] !== undefined){
     	socketMap[msg.to].emit('message', fwMsg);
     }else{
-    	console.log("\nCHAT SEND MSG: SOCKET IS NULL ");
+    	log.debug("\nCHAT SEND MSG: SOCKET IS NULL ");
     	if(msgMap[msg.to] === undefined){
-    		console.log("\nCHAT SEND MSG: SOCKET IS NULL --> CREATE MSG ARRAY");
+    		log.debug("CHAT SEND MSG: SOCKET IS NULL --> CREATE MSG ARRAY");
     		msgMap[msg.to] = [];
     	}
     	msgMap[msg.to].push(fwMsg);
+    	log.debug("MSG FROM "+fwMsg.from+" ADDED TO BE FORWARDED");
     }
   });
   socket.on('disconnect', function(){
-    console.log('[ -------------- CLIENT DISCONNECTED ----------- ]');
+    log.debug('[ -------------- CLIENT DISCONNECTED ----------- ]');
     delete socketMap[userMap[socket.id]];
     delete userMap[socket.id];
   });
 });
 
 server.listen(app.get('port'), function(){
-  console.log('Chat server listening on port ' + app.get('port'));
+	log.debug('Chat server listening on port ' + app.get('port'));
 });
