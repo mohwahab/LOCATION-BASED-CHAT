@@ -176,6 +176,23 @@ io.sockets.on('connection', function (socket) {
   });
 });
 
-server.listen(app.get('port'), function(){
-	log.debug('Chat server listening on port ' + app.get('port'));
-});
+//server.listen(app.get('port'), function(){
+//	log.debug('Chat server listening on port ' + app.get('port'));
+//});
+
+
+exports.start = function(cb) {
+	server.listen(app.get('port'), function(){
+		log.debug('Chat server listening on port ' + app.get('port'));
+		cb && cb()
+	});
+}
+
+exports.close = function(cb) {
+  if (server) server.close(cb)
+}
+
+// when app.js is launched directly
+if (module.id === require.main.id) {
+  exports.start()
+}

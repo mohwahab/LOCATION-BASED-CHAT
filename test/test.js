@@ -17,8 +17,9 @@ var svrUrl = config.svr_url;
 
 //var dbUrl = 'mongodb://localhost/location_based_chat';
 //var dbUrl = 'mongodb://mwahab:mwahab123@paulo.mongohq.com:10075/location_based_chat';
-var dbUrl = config.db_url;
-mongoose.connect(dbUrl); 
+
+//var dbUrl = config.db_url;
+//mongoose.connect(dbUrl); 
 
 
 var options ={
@@ -28,6 +29,16 @@ var options ={
 
 
 var testUsers = {};
+
+var app = require('../app');
+
+before(function(done) {
+  app.start(done);
+})
+
+after(function(done) {
+  app.close(done);
+})
 
 beforeEach(function(done){
 	this.timeout(300000);
