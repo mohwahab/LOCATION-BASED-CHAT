@@ -30,15 +30,17 @@ var options ={
 
 var testUsers = {};
 
-var app = require('../app');
+if(config.env === 'development'){
+	var app = require('../app');
 
-before(function(done) {
-  app.start(done);
-})
+	before(function(done) {
+	  app.start(done);
+	})
 
-after(function(done) {
-  app.close(done);
-})
+	after(function(done) {
+	  app.close(done);
+	})
+}
 
 beforeEach(function(done){
 	this.timeout(300000);
