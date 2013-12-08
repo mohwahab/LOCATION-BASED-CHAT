@@ -14,5 +14,6 @@
 	  "socket.io":"*",
 	  "socket.io-client":"*",
 	  "mocha": "1.11.0"
+	  "loglevel" : "*"
   }
 }
