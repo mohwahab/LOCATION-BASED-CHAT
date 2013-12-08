@@ -31,6 +31,7 @@ var options ={
 var testUsers = {};
 
 if(config.env === 'development'){
+	console.log("\n RUNNING TESTS ON DEVELOPMENT ENV \n");
 	var app = require('../app');
 
 	before(function(done) {
