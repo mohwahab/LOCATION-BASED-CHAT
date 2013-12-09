@@ -9,5 +9,6 @@ deploy:
     secure: uEizZdRvH94zrcynSqd163nv4VzutHXQEM74E7vVjjnW0L4zIl+6HZibYDptBH5UB2WFDWgCEjBqrhdDtvXzOW+zaqvL9tn+ryR9gq3MM4D7INCoHJyMd3f4FO5v4jSgArHUX7Ouylz3ve+0cNqGmzyFr/FMY4HF4RFh4pTmuKY=
   app: 
     master: location-based-chat-stag
+  run: "config:add NODE_ENV=staging --remote staging"  
   env:
-    - NODE_ENV=staging
+    - NODE_ENV="staging"
