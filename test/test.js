@@ -45,7 +45,7 @@ if(config.env === 'development'){
 }
 
 beforeEach(function(done){
-	this.timeout(300000);
+	this.timeout(600000);
 	User.model.remove({}, function() {
 		//console.log("\nDATABASE CLEARED");
 		//Add some test data
@@ -74,7 +74,7 @@ beforeEach(function(done){
 });  
 
 afterEach(function(done){
-	this.timeout(300000);
+	this.timeout(600000);
     //Clear Database
     User.model.remove({}, function() {
 	    //console.log("\nDATABASE CLEARED");
@@ -184,7 +184,7 @@ describe('User', function(){
 
 describe("Chat Server",function(){
   it('Should be able to receive and forward messages', function(done){
-	  this.timeout(300000);  
+	  this.timeout(600000);  
 	  var user1;
 	  var user2;
 	  
