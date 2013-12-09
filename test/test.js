@@ -42,10 +42,14 @@ if(config.env === 'development'){
 	after(function(done) {
 	  app.close(done);
 	})
+}else{
+	var dbUrl = config.db_url;
+	console.log("\n CONNECTING TO DB@("+dbUrl+")\n");
+	mongoose.connect(dbUrl);
 }
 
 beforeEach(function(done){
-	this.timeout(600000);
+	this.timeout(300000);
 	User.model.remove({}, function() {
 		//console.log("\nDATABASE CLEARED");
 		//Add some test data
