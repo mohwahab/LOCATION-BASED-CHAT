@@ -48,6 +48,7 @@ if(config.env === 'development'){
 	mongoose.connect(dbUrl);
 }
 
+var dbUrl = config.db_url;
 console.log("\n CONNECTING TO DB@("+dbUrl+")\n");
 mongoose.connect(dbUrl);
 
