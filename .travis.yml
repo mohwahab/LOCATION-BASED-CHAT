@@ -10,5 +10,3 @@ deploy:
   app: 
     master: location-based-chat-stag
   run: "config:add NODE_ENV=staging --remote staging"  
-  env:
-    - NODE_ENV="staging"

@@ -48,6 +48,9 @@ if(config.env === 'development'){
 	mongoose.connect(dbUrl);
 }
 
+console.log("\n CONNECTING TO DB@("+dbUrl+")\n");
+mongoose.connect(dbUrl);
+
 beforeEach(function(done){
 	this.timeout(300000);
 	User.model.remove({}, function() {
