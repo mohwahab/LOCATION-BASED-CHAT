@@ -184,6 +184,18 @@ describe('User', function(){
                  });
             });
     });
+    
+    it("Should be able to return the id of registered user", function(done){
+        //this.timeout(100000);
+        request
+            .get(svrUrl+'/register/Ahmed Alaa/01001252010/32.099865/30.121395/["01001252010","01208993983","01108993983"]?')
+            .end(function(res){
+                res.should.be.json;
+                res.body.id.should.equal(testUsers['01001252010'].toString());
+                done();
+            });
+    });
+    
 });
 
 describe("Chat Server",function(){

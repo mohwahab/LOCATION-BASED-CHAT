@@ -9,8 +9,9 @@ var app = express();
 app.use(express.bodyParser());
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
+
 //io.configure('development', function(){
-    io.set('transports', ['xhr-polling']);
+//    io.set('transports', ['xhr-polling']);
 //});
 
 var socketMap = {};
@@ -38,6 +39,9 @@ var config = common.config();
 //var dbUrl = 'mongodb://mwahab:mwahab123@paulo.mongohq.com:10075/location_based_chat';
 
 log.setLevel(config.log_level);
+
+io.set('log level', config.socketio_log);
+io.set('transports', config.socketio_transports);
 
 var dbUrl = config.db_url;
 mongoose.connect(dbUrl); 
@@ -74,41 +78,13 @@ if ('development' == app.get('env')) {
 
 app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 	log.info("[ "+req.method+" /register/"+req.params.name+"/"+req.params.number+"/"+req.params.long+"/"+req.params.lat+"/"+req.params.contacts+" ]");
-	User.register(req.params.name, req.params.number, req.params.long, req.params.lat, function(error,newUser){
-		if(error) {
-			log.error("ERROR register: "+error);
+	User.register(req.params.name, req.params.number, req.params.long, req.params.lat, req.params.contacts, function(result){
+		if(result.error) {
+			log.error("ERROR register: "+result.error);
        	 	res.status(500);
-       	 	res.send(error);
+       	 	res.send(result.error);
         } else {
-       	 	//console.log("New User Registered: "+newUser);
-//       	 	User.model.find({},function(error,docs){
-//       	 	if(error) {
-//		         console.log("ERROR: "+error);
-//	         } else {
-//	        	 console.log("\nDOCS: \n"+docs+"\n");
-//	         }
-//       	 	});
-	       	 User.findContacts(newUser, req.params.contacts, function(error, userContacts){
-	       		if(error) {
-	       			 log.error("ERROR: "+error);
-			         res.status(500);
-			       	 res.send(error);
-		         } else {
-		        	 //console.log("User Contacts: "+userContacts);
-		        	 newUser.contacts = userContacts;
-		 			 newUser.save();
-		 			 User.updateContacts(newUser,userContacts, function(error){
-		 			     if(error) {
-		 			    	 log.error("ERROR: "+error);
-		 			    	 res.status(500);
-		 		       	 	 res.send(error);
-		 			     }else{
-		 			    	 //console.log("id: "+newUser._id);
-		 			    	 res.json({id:newUser._id});
-		 			     }
-		 			 });
-		         }
-	 		});
+        	res.json({id:result.id});
         }
 	});
 });

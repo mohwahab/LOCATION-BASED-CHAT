@@ -1,6 +1,8 @@
 /**
  * User model
  */
+var log = require('loglevel');
+
 var User = function(){  
 	var mongoose = require('mongoose');
 	var Schema = mongoose.Schema;
@@ -35,19 +37,58 @@ var User = function(){
 //	              mongoose.connection.close();
 //	                });
 //	}
-	
-	   var _register = function(name, number, long, lat, callback){ 	    
-			_model.create({ name: name, number: number, loc: { type: 'Point', coordinates: [parseFloat(long),parseFloat(lat)] }},callback);
+	   var _add = function(name, number, long, lat, contacts, callback){
+		   _model.create({ name: name, number: number, loc: { type: 'Point', coordinates: [parseFloat(long),parseFloat(lat)] }},function(error,newUser){
+				if(error) {
+					log.error("ERROR register: "+error);
+					callback({ error : error});
+		        } else {
+			       	_model.find({ number : { $in: JSON.parse(contacts) } }, function(error, userContacts){
+			       		if(error) {
+			       			 log.error("ERROR: "+error);					      
+			       			 callback({ error : error});
+				         } else {
+				        	 newUser.contacts = userContacts;
+				 			 newUser.save();
+				 			 _model.update({_id: {$in: userContacts}}, {$push: {contacts:newUser._id}}, { multi: true }, function(error){
+				 			     if(error) {
+				 			    	 log.error("ERROR: "+error);
+				 			    	 callback({ error : error});
+				 			     }else{
+				 			    	 log.debug("REGISTER: id = "+newUser._id);
+				 			    	 callback({id : newUser._id});
+				 			     }
+				 			 });
+				         }
+			 		});
+		        }
+			});
 	   };
 	   
-	   var _findContacts = function(user, contacts, callback){
-		    _model.find({ number : { $in: JSON.parse(contacts) } },callback);
+	   var _register = function(name, number, long, lat, contacts, callback){
+		   _model.findOne({number : number}, function(error,retrievedUser){
+			   log.debug("REGISTER(RETRIVED): RETRIVED_USER = "+retrievedUser);
+			   if(error){
+				   log.error("ERROR register: "+error);
+					callback({ error : error});
+			   }else if(retrievedUser){
+				   log.debug("REGISTER(EXISTS): id = "+retrievedUser._id);
+			       callback({id : retrievedUser._id});
+			   }else{
+				   log.debug("REGISTER(DOESNOT EXISTS): WILL ADD NEW USER");
+				   _add(name, number, long, lat, contacts, callback);
+			   }
+		   });
 	   };
 	   
-	   
-	   var _updateContacts = function(newUser,userContacts,callback){
-		   _model.update({_id: {$in: userContacts}}, {$push: {contacts:newUser._id}}, { multi: true }, callback);
-	   };
+//	   var _findContacts = function(user, contacts, callback){
+//		    _model.find({ number : { $in: JSON.parse(contacts) } },callback);
+//	   };
+//	   
+//	   
+//	   var _updateContacts = function(newUser,userContacts,callback){
+//		   _model.update({_id: {$in: userContacts}}, {$push: {contacts:newUser._id}}, { multi: true }, callback);
+//	   };
 	   
 	   
 	   var _findNearContacts = function(id, long, lat, dist, callback){
@@ -57,8 +98,6 @@ var User = function(){
 			     }else{
 			    	 retrievedUser.loc.coordinates = [parseFloat(long), parseFloat(lat)];
 			    	 retrievedUser.save();
-			    	 //console.log("\nHERE:  _findNearContacts: (NAME)> "+retrievedUser.name);
-			    	 //console.log("\nHERE:  _findNearContacts: (CONTACTS)> "+retrievedUser.contacts+"\n\n");
 			    	 var distance = dist * 1000;
 			    	 _model.find( { _id: { $in : retrievedUser.contacts}, loc : { $near :
                      { $geometry :
@@ -89,9 +128,9 @@ var User = function(){
 		register: _register,
 	    schema: userSchema,
 	    model: _model,
-	    findContacts: _findContacts,
-	    findNearContacts: _findNearContacts,
-	    updateContacts: _updateContacts
+	    //findContacts: _findContacts,
+	    findNearContacts: _findNearContacts//,
+	    //updateContacts: _updateContacts
 	  }
 	
 }();
