@@ -3,7 +3,6 @@ node_js:
 - "0.10"
 services: 
 - mongodb
-before_install: export NODE_ENV="staging"
 deploy: 
   provider: heroku
   api_key: 
