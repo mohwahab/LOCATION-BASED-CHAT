@@ -11,6 +11,8 @@ var User = function(){
 	  name:  String,
 	  //socketId: { type: String, unique: true },
 	  number: { type: String, unique: true },
+	  online: { type: Boolean, default: false},
+	  visible: { type: Boolean, default: false},
 	  lastUpdated: { type: Date, default: Date.now },
 	  contacts: [{ type: Schema.Types.ObjectId, ref: 'User'}],
 	  loc: {
@@ -29,6 +31,14 @@ var User = function(){
 	
 	userSchema.index({ loc: '2dsphere' });
 	var _model = mongoose.model('User', userSchema);
+	
+	var _showLocation = function(id,callback){
+		_model.update({_id: id},{visible: true},callback);
+	};
+	
+	var _hideLocation = function(id,callback){
+		_model.update({_id: id},{visible: false},callback);
+	};
 	
 // CLOSE CONNECTION	
 //	function done (err) {
@@ -91,12 +101,18 @@ var User = function(){
 //	   };
 	   
 	   
-	   var _findNearContacts = function(id, long, lat, dist, callback){
+	   var _findNearContacts = function(id, long, lat, dist, hide, callback){
 		    _model.findById(id, function(error, retrievedUser) {
 		    	if(error) {
 			    	 console.log("\nHERE:  _findNearContacts: (ERROR)> "+error);
 			     }else{
 			    	 retrievedUser.loc.coordinates = [parseFloat(long), parseFloat(lat)];
+			    	 retrievedUser.online = true;
+			    	 if(hide){
+			    		 retrievedUser.visible = false;
+			    	 }else{
+			    		 retrievedUser.visible = true;
+			    	 }
 			    	 retrievedUser.save();
 			    	 var distance = dist * 1000;
 			    	 _model.find( { _id: { $in : retrievedUser.contacts}, loc : { $near :
@@ -128,6 +144,8 @@ var User = function(){
 		register: _register,
 	    schema: userSchema,
 	    model: _model,
+	    showLocation: _showLocation,
+	    hideLocation: _hideLocation,
 	    //findContacts: _findContacts,
 	    findNearContacts: _findNearContacts//,
 	    //updateContacts: _updateContacts

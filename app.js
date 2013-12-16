@@ -81,10 +81,33 @@ app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 	User.register(req.params.name, req.params.number, req.params.long, req.params.lat, req.params.contacts, function(result){
 		if(result.error) {
 			log.error("ERROR register: "+result.error);
-       	 	res.status(500);
-       	 	res.send(result.error);
+			res.json(500, { error: result.error });
         } else {
         	res.json({id:result.id});
+        }
+	});
+});
+
+app.post('/hide/:id', function(req, res) {
+	log.info("[ "+req.method+" /hide/"+req.params.id+" ]");
+	User.hideLocation(req.params.id, function(error){
+		if(error) {
+			log.error("ERROR hide: "+error);
+       	 	res.json(500, { error: error });
+        } else {
+        	res.send(200);
+        }
+	});
+});
+
+app.post('/show/:id', function(req, res) {
+	log.info("[ "+req.method+" /show/"+req.params.id+" ]");
+	User.showLocation(req.params.id, function(error){
+		if(error) {
+			log.error("ERROR show: "+error);
+			res.json(500, { error: error });
+        } else {
+        	res.send(200);
         }
 	});
 });
@@ -93,11 +116,10 @@ app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
 	log.info("[ "+req.method+" /near/"+req.params.id+"/"+req.params.long+"/"+req.params.lat+"/"+req.params.dist+" ]");
 	//TODO Notify friends in region with his location 
-	User.findNearContacts(req.params.id, req.params.long, req.params.lat, req.params.dist, function(error, nearContacts){
+	User.findNearContacts(req.params.id, req.params.long, req.params.lat, req.params.dist, false, function(error, nearContacts){
 	     if(error) {
 	    	 log.error("ERROR: "+error);
-	    	 res.status(500);
-       	 	 res.send(error);
+	    	 res.json(500, { error: result.error });
 	     }else{
 	    	 //console.log("NEAR CONTACTS: "+nearContacts+"\n\n");
 	    	 res.json({contacts : nearContacts});

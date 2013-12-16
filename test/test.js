@@ -115,6 +115,8 @@ describe('User', function(){
 					   			         	console.log("\nGET RETRIEVED USER ERROR: "+error);
 					   		         	} else {
 					   		         		//console.log("\nGET RETRIEVED USER: \n"+retrievedUser+"\n");
+					   		         		retrievedUser.visible.should.equal(true);
+					   		         		retrievedUser.online.should.equal(true);
 					   		         		retrievedUser.loc.coordinates.should.include(31.102711);
 					   		         		retrievedUser.loc.coordinates.should.include(30.018571);
 					   		         	}
@@ -193,6 +195,42 @@ describe('User', function(){
                 res.should.be.json;
                 res.body.id.should.equal(testUsers['01001252010'].toString());
                 done();
+            });
+    });
+    
+    it("Should be able to hide the user's location", function(done){
+        //this.timeout(100000);
+    	var id = testUsers['01001252010'];
+        request
+            .post(svrUrl+'/hide/'+id)
+            .end(function(res){
+            	res.statusCode.should.equal(200);
+            	User.model.findById(id, function(error, retrievedUser) {
+                	if(error) {
+   			         	console.log("\nHide::GET RETRIEVED USER ERROR: "+error);
+   		         	} else {
+   		         		retrievedUser.visible.should.equal(false);
+   		         	}
+                	done();
+   		        });
+            });
+    });
+    
+    it("Should be able to show the user's location", function(done){
+        //this.timeout(100000);
+    	var id = testUsers['01001252010'];
+        request
+            .post(svrUrl+'/show/'+id)
+            .end(function(res){
+                res.statusCode.should.equal(200);
+                User.model.findById(id, function(error, retrievedUser) {
+                	if(error) {
+   			         	console.log("\nShow::GET RETRIEVED USER ERROR: "+error);
+   		         	} else {
+   		         		retrievedUser.visible.should.equal(true);
+   		         	}
+                	done();
+   		        });
             });
     });
     
