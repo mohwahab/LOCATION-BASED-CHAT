@@ -107,14 +107,17 @@ var User = function(){
 			    	 console.log("\nHERE:  _findNearContacts: (ERROR)> "+error);
 			     }else{
 			    	 retrievedUser.loc.coordinates = [parseFloat(long), parseFloat(lat)];
-			    	 retrievedUser.online = true;
-			    	 if(hide){
-			    		 retrievedUser.visible = false;
-			    	 }else{
-			    		 retrievedUser.visible = true;
-			    	 }
+//			    	 TODO Uncomment
+//			    	 retrievedUser.online = true;
+//			    	 if(hide){
+//			    		 retrievedUser.visible = false;
+//			    	 }else{
+//			    		 retrievedUser.visible = true;
+//			    	 }
 			    	 retrievedUser.save();
 			    	 var distance = dist * 1000;
+			    	 log.debug("[ NEAR CONTACTS:: Long: "+long+"  Lat: "+lat+"  Dist: "+distance+" ]");
+			    	 log.debug("[ NEAR CONTACTS:: User:\n[ "+retrievedUser+" ]\n]");
 			    	 _model.find( { _id: { $in : retrievedUser.contacts}, loc : { $near :
                      { $geometry :
                          { type : "Point" ,
