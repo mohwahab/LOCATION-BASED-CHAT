@@ -131,8 +131,8 @@ io.sockets.on('connection', function (socket) {
   log.debug('[ -------------- CLIENT CONNECTED ----------- ]');
   socket.on('chat', function(user){
 	  User.model.findById(user.id, function(error, chatter) {
-      	if(error) {
-      			log.error("\nCHAT GET USER ERROR: "+error);
+      			if(error) {
+      				log.error("CHAT GET USER ERROR: "+error);
 	         	} else {
 	         	    //delete socketMap[chatter.number];
 	         	    //delete userMap[socket.id];
@@ -151,14 +151,14 @@ io.sockets.on('connection', function (socket) {
   });
   socket.on('message', function(msg){
     fwMsg = {from:userMap[socket.id], txt:msg.txt}
-    log.debug("\nCHAT SEND MSG msg: "+msg);
-    log.debug("\nCHAT SEND MSG msg.to: "+msg.to);
-    log.debug("\nCHAT SEND MSG socketMap[msg.to]: "+socketMap[msg.to]);
+    log.debug("CHAT SEND MSG msg: "+msg);
+    log.debug("CHAT SEND MSG msg.to: "+msg.to);
+    log.debug("CHAT SEND MSG socketMap[msg.to]: "+socketMap[msg.to]);
     //if(!socketMap[msg.to]){
     if(msg.to !== undefined && socketMap[msg.to] !== undefined){
     	socketMap[msg.to].emit('message', fwMsg);
     }else{
-    	log.debug("\nCHAT SEND MSG: SOCKET IS NULL ");
+    	log.debug("CHAT SEND MSG: SOCKET IS NULL ");
     	if(msgMap[msg.to] === undefined){
     		log.debug("CHAT SEND MSG: SOCKET IS NULL --> CREATE MSG ARRAY");
     		msgMap[msg.to] = [];
