@@ -41,7 +41,9 @@ var config = common.config();
 log.setLevel(config.log_level);
 
 io.set('log level', config.socketio_log);
-io.set('transports', config.socketio_transports);
+//TODO Uncomment
+//io.set('transports', config.socketio_transports);
+io.set('transports', ['xhr-polling']);
 
 var dbUrl = config.db_url;
 mongoose.connect(dbUrl); 
