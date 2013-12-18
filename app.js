@@ -133,7 +133,7 @@ io.sockets.on('connection', function (socket) {
   socket.on('register', function(user){
 	  User.getNumber(user.id, function(result) {
       			if(result.error) {
-      				log.error("CHAT GET USER ERROR: "+error);
+      				log.error("CHAT GET USER ERROR: "+result.error);
 	         	} else {
 	         	    //delete socketMap[chatter.number];
 	         	    //delete userMap[socket.id];
