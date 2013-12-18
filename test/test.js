@@ -254,7 +254,7 @@ describe("Chat Server",function(){
      	     		user1 = io.connect(svrUrl, options);
      	     	    user2 = io.connect(svrUrl, options);
      	     		user1.on('connect', function(data){
-     	     			user1.emit('chat',{id:retrievedUser1._id});
+     	     			user1.emit('register',{id:retrievedUser1._id});
      	     			user1.emit('message', {to:'01008993983', txt:'Hello Sarah ;)'});
      	     		});
      	     		user1.on('message', function(msg){
@@ -264,7 +264,7 @@ describe("Chat Server",function(){
      	     			done();
      	     		});
      	     		user2.on('connect', function(data){
-     	     			user2.emit('chat',{id:retrievedUser2._id}); 
+     	     			user2.emit('register',{id:retrievedUser2._id}); 
      	     		});
      	     		user2.on('message', function(msg){
      	     			user2.emit('message', {to:'01001252010', txt:'Hello Ahmed :)'});

@@ -16,6 +16,7 @@ var io = require('socket.io').listen(server);
 
 var socketMap = {};
 var msgMap = {};
+var grpMap = {};
 var userMap = {};
     
 //var express = require('express')
@@ -41,9 +42,7 @@ var config = common.config();
 log.setLevel(config.log_level);
 
 io.set('log level', config.socketio_log);
-//TODO Uncomment
-//io.set('transports', config.socketio_transports);
-io.set('transports', ['xhr-polling']);
+io.set('transports', config.socketio_transports);
 
 var dbUrl = config.db_url;
 mongoose.connect(dbUrl); 
@@ -131,26 +130,34 @@ app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
 
 io.sockets.on('connection', function (socket) {
   log.debug('[ -------------- CLIENT CONNECTED ----------- ]');
-  socket.on('chat', function(user){
-	  User.model.findById(user.id, function(error, chatter) {
-      			if(error) {
+  socket.on('register', function(user){
+	  User.getNumber(user.id, function(result) {
+      			if(result.error) {
       				log.error("CHAT GET USER ERROR: "+error);
 	         	} else {
 	         	    //delete socketMap[chatter.number];
 	         	    //delete userMap[socket.id];
-	         		log.debug(chatter.number+" REGISTERED FOR CHAT");
-	         		socketMap[chatter.number] = socket;
-	         		userMap[socket.id] = chatter.number;
-	         		if(msgMap[chatter.number]!== undefined){
-	         			msgMap[chatter.number].forEach(function(msg){
+	         		log.debug(result.number+" REGISTERED FOR CHAT");
+	         		socketMap[result.number] = socket;
+	         		userMap[socket.id] = result.number;
+	         		if(msgMap[result.number]){
+	         			msgMap[result.number].forEach(function(msg){
 	         				socket.emit('message', msg);
 	         				log.debug("GOING TO SEND: "+msg.txt);
 	         			});
-	         			msgMap[chatter.number] = [];
+	         			msgMap[result.number] = [];
+	         		}
+	         		if(grpMap[result.number]){
+	         			grpMap[result.number].forEach(function(group){
+	         				socket.join(group);
+	         				log.debug(result.number+" HAS JOINED GROUP "+group);
+	         			});
+	         			grpMap[result.number] = [];
 	         		}
 	         	}
 	  });
   });
+  
   socket.on('message', function(msg){
     fwMsg = {from:userMap[socket.id], txt:msg.txt}
     log.debug("CHAT SEND MSG msg: "+msg);
@@ -169,11 +176,55 @@ io.sockets.on('connection', function (socket) {
     	log.debug("MSG FROM "+fwMsg.from+" ADDED TO BE FORWARDED");
     }
   });
+  
   socket.on('disconnect', function(){
-    log.debug('[ -------------- CLIENT DISCONNECTED ----------- ]');
-    delete socketMap[userMap[socket.id]];
-    delete userMap[socket.id];
+	    log.debug('[ -------------- CLIENT DISCONNECTED ----------- ]');
+	    delete socketMap[userMap[socket.id]];
+	    delete userMap[socket.id];
   });
+  
+  socket.on('create-group', function(group){
+    log.debug("CREATE GROUP: '"+group+"'");
+    socket.join(group);
+    
+  });
+  
+  socket.on('add-to-group', function(data){
+	    log.debug("ADD TO GROUP: '"+data.numbers+"'");
+	    numbers.forEach(function(data){
+	    	if(socketMap[data.number]){
+	    		socketMap[data.number].join(data.group);
+	    	}else{
+	    		if(!grpMap[data.number]){
+	        		log.debug("ADD TO GROUP: SOCKET IS NULL --> CREATE GROUP ARRAY");
+	        		grMap[data.number] = [];
+	        	}
+	    		grMap[data.number].push(data.group);
+	        	log.debug("GROUP "+data.group+" ADDED TO BE JOINED");
+	    	}
+		});
+  });
+  
+  
+  socket.on('remove-from-group', function(data){
+	    log.debug("REMOVE FROM GROUP: '"+data.numbers+"'");
+	    numbers.forEach(function(data){
+	    	if(socketMap[data.number]){
+	    		socketMap[data.number].leave(data.group);
+	    	}
+		});
+ });
+ 
+  socket.on('leave-group', function(data){
+	  User.getNumber(data.user.id, function(result) {
+      			if(result.error) {
+      				log.error("LEAVE GROUP GET USER ERROR: "+error);
+	         	} else {
+	         		socketMap[result.number].leave(data.group)
+	         	}
+	  });
+  }); 
+  
 });
 
 //server.listen(app.get('port'), function(){

@@ -133,6 +133,16 @@ var User = function(){
 		    });
 	   };
 	   
+	   var _getNumber = function(id, callback){
+		   _model.findById(id, function(error, retrievedUser) {
+	      	if(error) {
+	      		callback({error : error});
+         	} else {
+         		callback({number : retrievedUser.number});
+         	}
+		  });
+};
+	   
 //	   var _addUserSocket = function(id, socketId, callback){
 //		   _model.findById(user.id, function(error, user) {
 //			      	if(error) {
@@ -149,6 +159,7 @@ var User = function(){
 	    model: _model,
 	    showLocation: _showLocation,
 	    hideLocation: _hideLocation,
+	    getNumber: _getNumber,
 	    //findContacts: _findContacts,
 	    findNearContacts: _findNearContacts//,
 	    //updateContacts: _updateContacts
