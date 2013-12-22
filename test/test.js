@@ -274,4 +274,16 @@ describe("Chat Server",function(){
      	}
   	  });
   });
+  
+  it('Should be able to create group chat', function(done){
+	  var user = io.connect(svrUrl, options);
+	  user.on('connect', function(data){
+			user.emit('create-group',function(group){
+				group.length.should.equal(36);
+				user.disconnect();
+				done();
+			});
+		});
+  });
+  
 });

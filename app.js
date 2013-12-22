@@ -1,23 +1,29 @@
-
 /**
  * Module dependencies.
  */
 //var schema = 'users';
+var SocketDB = require('./util/socketdb.js');
+var MessageDB = require('./util/messagedb.js');
+var GroupDB = require('./util/groupdb.js');
+var socketDB = new SocketDB();
+var messageDB = new MessageDB();
+var groupDB = new GroupDB();
 var log = require('loglevel');
 var express = require('express');
 var app = express();
 app.use(express.bodyParser());
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
+var uuid = require('node-uuid');
 
 //io.configure('development', function(){
 //    io.set('transports', ['xhr-polling']);
 //});
 
-var socketMap = {};
-var msgMap = {};
-var grpMap = {};
-var userMap = {};
+//var socketMap = {}; 	//{phone-number : socket-object}
+//var msgMap = {};		//{phone-number : message-object[]}
+var grpMap = {};		//{phone-number : group-name[]}
+//var userMap = {};		//{socket-id : phone-number}
     
 //var express = require('express')
 //, routes = require('./routes')
@@ -138,91 +144,87 @@ io.sockets.on('connection', function (socket) {
 	         	    //delete socketMap[chatter.number];
 	         	    //delete userMap[socket.id];
 	         		log.debug(result.number+" REGISTERED FOR CHAT");
-	         		socketMap[result.number] = socket;
-	         		userMap[socket.id] = result.number;
-	         		if(msgMap[result.number]){
-	         			msgMap[result.number].forEach(function(msg){
+	         		//socketMap[result.number] = socket;
+	         		socketDB.add(result.number,socket);
+	         		//userMap[socket.id] = result.number;
+	         		socket.phone = result.number;
+	         		var userMessages = messageDB.get(result.number);
+	         		if(userMessages){
+	         			userMessages.forEach(function(msg){
 	         				socket.emit('message', msg);
 	         				log.debug("GOING TO SEND: "+msg.txt);
 	         			});
-	         			msgMap[result.number] = [];
+	         			messageDB.clear(result.number);
 	         		}
-	         		if(grpMap[result.number]){
-	         			grpMap[result.number].forEach(function(group){
+	         		var userGroups = groupDB.get(result.number);
+	         		if(userGroups){
+	         			userGroups.forEach(function(group){
 	         				socket.join(group);
 	         				log.debug(result.number+" HAS JOINED GROUP "+group);
 	         			});
-	         			grpMap[result.number] = [];
+	         			userGroups.clear(result.number);
 	         		}
 	         	}
 	  });
   });
   
   socket.on('message', function(msg){
-    fwMsg = {from:userMap[socket.id], txt:msg.txt}
+    var fwmsg = {from:socket.phone, txt:msg.txt}
+    var userSocket = socketDB.get(msg.to);
+    log.debug("CHAT SEND MSG msg.from: "+socket.phone);
     log.debug("CHAT SEND MSG msg: "+msg);
     log.debug("CHAT SEND MSG msg.to: "+msg.to);
-    log.debug("CHAT SEND MSG socketMap[msg.to]: "+socketMap[msg.to]);
-    //if(!socketMap[msg.to]){
-    if(msg.to !== undefined && socketMap[msg.to] !== undefined){
-    	socketMap[msg.to].emit('message', fwMsg);
+    log.debug("CHAT SEND MSG userSocket: "+userSocket);
+    if(userSocket){
+    	userSocket.emit('message', fwmsg);
     }else{
     	log.debug("CHAT SEND MSG: SOCKET IS NULL ");
-    	if(msgMap[msg.to] === undefined){
-    		log.debug("CHAT SEND MSG: SOCKET IS NULL --> CREATE MSG ARRAY");
-    		msgMap[msg.to] = [];
-    	}
-    	msgMap[msg.to].push(fwMsg);
-    	log.debug("MSG FROM "+fwMsg.from+" ADDED TO BE FORWARDED");
+    	messageDB.add(msg.to,fwmsg);
     }
   });
   
   socket.on('disconnect', function(){
 	    log.debug('[ -------------- CLIENT DISCONNECTED ----------- ]');
-	    delete socketMap[userMap[socket.id]];
-	    delete userMap[socket.id];
+	    delete socketDB.remove(socket.phone);
+	    //delete userMap[socket.id];
   });
   
-  socket.on('create-group', function(group){
-    log.debug("CREATE GROUP: '"+group+"'");
-    socket.join(group);
-    
+  socket.on('create-group', function(callback){
+	  	var group = uuid.v4();
+		log.debug("NEW GROUP CREATED: '"+group+"'");
+	  	socket.room = group;
+      	socket.join(group);
+      	callback(group);	
   });
   
   socket.on('add-to-group', function(data){
-	    log.debug("ADD TO GROUP: '"+data.numbers+"'");
-	    numbers.forEach(function(data){
-	    	if(socketMap[data.number]){
-	    		socketMap[data.number].join(data.group);
+	    log.debug("ADD TO GROUP: ["+data.numbers+"]");
+	    var userSocket = null;
+	    data.numbers.forEach(function(number){
+	    	userSocket = socketDB.get(number);
+	    	if(userSocket){
+	    		userSocket.room = data.group;
+	    		userSocket.join(data.group);
 	    	}else{
-	    		if(!grpMap[data.number]){
-	        		log.debug("ADD TO GROUP: SOCKET IS NULL --> CREATE GROUP ARRAY");
-	        		grMap[data.number] = [];
-	        	}
-	    		grMap[data.number].push(data.group);
-	        	log.debug("GROUP "+data.group+" ADDED TO BE JOINED");
+	    		userGroups.add(number,data.group);
 	    	}
 		});
   });
   
   
   socket.on('remove-from-group', function(data){
-	    log.debug("REMOVE FROM GROUP: '"+data.numbers+"'");
-	    numbers.forEach(function(data){
-	    	if(socketMap[data.number]){
-	    		socketMap[data.number].leave(data.group);
+	    log.debug("REMOVE FROM GROUP: ["+data.numbers+"]");
+	    var userSocket = null;
+	    data.numbers.forEach(function(number){
+	    	userSocket = socketDB.get(number);
+	    	if(userSocket){
+	    		userSocket.leave(data.group);
 	    	}
 		});
- });
+  });
  
-  socket.on('leave-group', function(data){
-	  User.getNumber(data.user.id, function(result) {
-      			if(result.error) {
-      				log.error("LEAVE GROUP GET USER ERROR: "+error);
-	         	} else {
-	         		socketMap[result.number].leave(data.group)
-	         	}
-	  });
+  socket.on('leave-group', function(group){
+	  socket.leave(group.name);
   }); 
   
 });
