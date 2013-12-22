@@ -4,13 +4,13 @@ function GroupDB() {
     this.groups = {};	//{phone-number : group-object[]}
 };
 
-GroupDB.prototype.add = function(phoneNumer, group) {
+GroupDB.prototype.add = function(phoneNumer, notification) {
 	if(!this.groups[phoneNumer]){
 		log.debug("GroupDB::add >> CREATE GROUP ARRAY");
 		this.groups[phoneNumer] = [];
 	}
-	this.groups[phoneNumer].push(group);
-	log.debug("GroupDB::add >> GROUP "+group+" ADDED TO ("+phoneNumer+") WAITING GROUPS");
+	this.groups[phoneNumer].push(notification);
+	log.debug("GroupDB::add >> GROUP "+notification+" ADDED TO ("+phoneNumer+") WAITING GROUPS");
 };
 
 GroupDB.prototype.get = function(phoneNumer) {

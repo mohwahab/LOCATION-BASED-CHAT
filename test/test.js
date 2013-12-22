@@ -275,15 +275,106 @@ describe("Chat Server",function(){
   	  });
   });
   
+//  it('Should be able to create group chat', function(done){
+//	  var user = io.connect(svrUrl, options);
+//	  var number = {'number':'01008993983'};
+//	  User.model.findOne(number,function(error,retrievedUser){ 
+//	  		if(error) {
+//			    console.log("\nCREATE GROUP CHAT GET USER ERROR: "+error);
+//	     	} else {
+//	     		user = io.connect(svrUrl, options);
+//	     		user.on('connect', function(data){
+//	     			user.emit('register',{id:retrievedUser._id});
+//	     			user.emit('create-group', number, function(group){
+//	     				//user.group.should.equal(group);
+//	    				group.length.should.equal(36);
+//	    				user.disconnect();
+//	    				done();
+//	    			});
+//	     		});
+//	     	}
+//	  });
+//  });
+  
+  
   it('Should be able to create group chat', function(done){
-	  var user = io.connect(svrUrl, options);
-	  user.on('connect', function(data){
-			user.emit('create-group',function(group){
-				group.length.should.equal(36);
-				user.disconnect();
-				done();
-			});
-		});
+	  User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
+	  		if(error) {
+			    console.log("\nGET CHAT USER ERROR: "+error);
+	     	} else {
+	     		var user = io.connect(svrUrl, options);
+	     		var id = {id:retrievedUser._id};
+	     		user.on('connect', function(data){
+	     			  //user.emit('register',{id:retrievedUser._id});
+	     			  user.emit('create-group', id, function(group){
+	     				  //user.group.should.equal(group);
+	     				  group.length.should.equal(36);
+	     				  user.disconnect();
+	     			  });
+	     			  done();
+	     		});
+	     	}
+	  });
+  });
+  
+  
+  it('Should be able to add members to group', function(done){
+	  this.timeout(600000);  
+	  var user1;
+	  var user2;
+	  var user3;
+	  var creator = '01001252010';
+	  var numbers = ['01008993983','01108993983'];
+	  User.model.findOne({'number':creator},function(error,retrievedUser1){ 
+  		if(error) {
+		    console.log("\nGET CHAT USER ERROR: "+error);
+     	} else {
+     		User.model.findOne({'number': numbers[0]},function(error,retrievedUser2){ 
+     	  		if(error) {
+     			    console.log("\nGET CHAT USER ERROR: "+error);
+     	     	} else {
+     	     		User.model.findOne({'number': numbers[1]},function(error,retrievedUser3){ 
+     	     	  		if(error) {
+     	     			    console.log("\nGET CHAT USER ERROR: "+error);
+     	     	     	} else {
+     	     	     		user1 = io.connect(svrUrl, options);
+     	     	     	    user2 = io.connect(svrUrl, options);
+     	     	     	    user3 = io.connect(svrUrl, options);
+     	     	     	    var groupName = null;
+     	     	     	    var diconnectedCount = 0;
+	     	     	        var checkNotification = function(user){
+	     	     	        	user.on('notification', function(notification){
+	     	     	        		notification.event.should.equal("add-to-group");
+	     	     	     			notification.group.should.equal(groupName);
+	     	     	     			notification.friend.should.equal(creator);
+		     	     	            user.disconnect();
+		     	     	            diconnectedCount++;
+		     	     	            if(diconnectedCount == 2){
+		     	     	            	done();
+		     	     	            };
+	     	     	          });
+	     	     	        };
+     	     	     		user1.on('connect', function(data){
+     	     	     			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
+     	     	     				groupName = group;
+     	     	     				user1.emit('add-to-group',{'group':groupName, 'numbers':numbers});
+     	     	     				user1.disconnect();
+     	     	     			});     	     
+     	     	     		});
+     	     	     		user2.on('connect', function(data){
+     	     	     			user2.emit('register',{id:retrievedUser2._id});
+     	     	     			checkNotification(user2);
+     	     	     		});
+     	     	     		user3.on('connect', function(data){
+     	     	     			user3.emit('register',{id:retrievedUser3._id}); 
+     	     	     			checkNotification(user3);
+     	     	     		});
+     	     	     	}
+     	     	  	});
+     	     	}
+     	  	});
+     	}
+  	  });
   });
   
 });

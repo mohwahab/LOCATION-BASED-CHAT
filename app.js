@@ -158,9 +158,10 @@ io.sockets.on('connection', function (socket) {
 	         		}
 	         		var userGroups = groupDB.get(result.number);
 	         		if(userGroups){
-	         			userGroups.forEach(function(group){
-	         				socket.join(group);
-	         				log.debug(result.number+" HAS JOINED GROUP "+group);
+	         			userGroups.forEach(function(notification){
+	         				socket.join(notification.group);
+	         				socket.emit('notification',notification);
+	         				log.debug(result.number+" HAS JOINED GROUP "+notification.group);
 	         			});
 	         			userGroups.clear(result.number);
 	         		}
@@ -189,12 +190,21 @@ io.sockets.on('connection', function (socket) {
 	    //delete userMap[socket.id];
   });
   
-  socket.on('create-group', function(callback){
-	  	var group = uuid.v4();
-		log.debug("NEW GROUP CREATED: '"+group+"'");
-	  	socket.room = group;
-      	socket.join(group);
-      	callback(group);	
+  socket.on('create-group', function(user,callback){
+	  User.getNumber(user.id, function(result) {
+			if(result.error) {
+				log.error("CHAT GET USER ERROR: "+result.error);
+			} else {
+				var group = uuid.v4();
+			  	log.debug("NEW GROUP CREATOR: '"+result.number+"'");
+				log.debug("NEW GROUP CREATED: '"+group+"'");
+				socket.phone = result.number;
+				userSocket = socketDB.getOrCreate(result.number, socket);
+				userSocket.group = group;
+				userSocket.join(group);
+		      	callback(group);
+			}
+	  });
   });
   
   socket.on('add-to-group', function(data){
@@ -202,11 +212,18 @@ io.sockets.on('connection', function (socket) {
 	    var userSocket = null;
 	    data.numbers.forEach(function(number){
 	    	userSocket = socketDB.get(number);
+	    	var notification = {event:"add-to-group",group:data.group,friend:socket.phone}
+	    	log.debug("ADD TO GROUP USER NOTIFICATION EVENT: ["+notification.event+"]");
+    		log.debug("ADD TO GROUP USER NOTIFICATION GROUP: ["+notification.group+"]");
+    		log.debug("ADD TO GROUP USER NOTIFICATION FRIEND: ["+notification.friend+"]");
 	    	if(userSocket){
-	    		userSocket.room = data.group;
+	    		log.debug("ADD TO GROUP USER: '"+number+"' ADDED");
+	    		userSocket.group = data.group;
 	    		userSocket.join(data.group);
+	    		userSocket.emit('notification',notification);
 	    	}else{
-	    		userGroups.add(number,data.group);
+	    		log.debug("ADD TO GROUP USER: '"+number+"' NOT REGISTERED");
+	    		userGroups.add(number,notification);
 	    	}
 		});
   });
