@@ -377,4 +377,80 @@ describe("Chat Server",function(){
   	  });
   });
   
+  
+  it('Should be able to leave group', function(done){
+	  this.timeout(600000);  
+	  var user1;
+	  var user2;
+	  var user3;
+	  var creator = '01001252010';
+	  var numbers = ['01008993983','01108993983'];
+	  User.model.findOne({'number':creator},function(error,retrievedUser1){ 
+  		if(error) {
+		    console.log("\nGET CHAT USER ERROR: "+error);
+     	} else {
+     		User.model.findOne({'number': numbers[0]},function(error,retrievedUser2){ 
+     	  		if(error) {
+     			    console.log("\nGET CHAT USER ERROR: "+error);
+     	     	} else {
+     	     		User.model.findOne({'number': numbers[1]},function(error,retrievedUser3){ 
+     	     	  		if(error) {
+     	     			    console.log("\nGET CHAT USER ERROR: "+error);
+     	     	     	} else {
+     	     	     		user1 = io.connect(svrUrl, options);
+     	     	     	    user2 = io.connect(svrUrl, options);
+     	     	     	    user2.number = numbers[0];
+     	     	     	    user3 = io.connect(svrUrl, options);
+     	     	     	    user3.number = numbers[1];
+     	     	     	    var groupName = null;
+     	     	     	    var diconnectedCount = 0;
+	     	     	        var disconnetUser = function(user){
+	     	     	        	user.disconnect();
+	     	     	        	diconnectedCount++;
+	     	     	            if(diconnectedCount == 3){
+	     	     	            	console.log("ALL USERS DISCONNECTED");
+	     	     	            	done();
+	     	     	            };
+	     	     	        };
+     	     	     		user1.on('connect', function(data){
+     	     	     			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
+     	     	     				groupName = group;
+     	     	     				user1.emit('add-to-group',{'group':groupName, 'numbers':numbers});
+     	     	     			});
+     	     	     		});
+     	     	     		user1.on('notification', function(notification){
+	     	     					notification.event.should.equal("leave-group");
+	     	     					notification.group.should.equal(groupName);
+	     	     					notification.friend.should.equal(user2.number);
+	     	     					disconnetUser(user1);
+	     	     			});
+     	     	     		user2.on('connect', function(data){
+     	     	     			user2.emit('register',{id:retrievedUser2._id});
+     	     	     		});
+     	     	     		user2.on('notification', function(notification){
+     	     	        		if(notification.event === 'add-to-group'){
+     	     	        			user2.emit('leave-group',{name:groupName});
+     	     	        			disconnetUser(user2);
+     	     	        		}
+     	     	     		});
+     	     	     		user3.on('connect', function(data){
+     	     	     			user3.emit('register',{id:retrievedUser3._id}); 
+     	     	     		});
+     	     	     		user3.on('notification', function(notification){
+     	     	        		if(notification.event === 'leave-group'){
+     	     	        			notification.event.should.equal("leave-group");
+	     	     	     			notification.group.should.equal(groupName);
+	     	     	     			notification.friend.should.equal(user2.number);
+	     	     	     			disconnetUser(user3);
+     	     	        		}
+     	     	     		});
+     	     	     	}
+     	     	  	});
+     	     	}
+     	  	});
+     	}
+  	  });
+  });
+  
+  
 });

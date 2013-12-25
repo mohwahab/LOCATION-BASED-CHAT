@@ -135,7 +135,7 @@ app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
 });
 
 io.sockets.on('connection', function (socket) {
-  log.debug('[ -------------- CLIENT CONNECTED ----------- ]');
+  log.debug('\n[ -------------- CLIENT CONNECTED ('+socket.id+') ----------- ]');
   socket.on('register', function(user){
 	  User.getNumber(user.id, function(result) {
       			if(result.error) {
@@ -185,7 +185,7 @@ io.sockets.on('connection', function (socket) {
   });
   
   socket.on('disconnect', function(){
-	    log.debug('[ -------------- CLIENT DISCONNECTED ----------- ]');
+	    log.debug('\n[ -------------- CLIENT (DIS)CONNECTED ('+socket.id+') ----------- ]');
 	    delete socketDB.remove(socket.phone);
 	    //delete userMap[socket.id];
   });
@@ -234,13 +234,18 @@ io.sockets.on('connection', function (socket) {
 	    var userSocket = null;
 	    data.numbers.forEach(function(number){
 	    	userSocket = socketDB.get(number);
+	    	var notification = {event:"remove-from-group",group:data.group,friend:socket.phone}
 	    	if(userSocket){
+	    		//userSocket.group = null;
+	    		userSocket.emit('notification',notification);
 	    		userSocket.leave(data.group);
 	    	}
 		});
   });
  
   socket.on('leave-group', function(group){
+	  var notification = {event:"leave-group",group:group.name,friend:socket.phone}
+	  socket.broadcast.to(group.name).emit('notification', notification);
 	  socket.leave(group.name);
   }); 
   
