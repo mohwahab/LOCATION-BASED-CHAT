@@ -5,9 +5,12 @@
 var SocketDB = require('./util/socketdb.js');
 var MessageDB = require('./util/messagedb.js');
 var GroupDB = require('./util/groupdb.js');
+var Group = require('./util/group.js');
+var Groups = require('./util/groups.js');
 var socketDB = new SocketDB();
 var messageDB = new MessageDB();
 var groupDB = new GroupDB();
+var groups = new Groups();
 var log = require('loglevel');
 var express = require('express');
 var app = express();
@@ -22,7 +25,7 @@ var uuid = require('node-uuid');
 
 //var socketMap = {}; 	//{phone-number : socket-object}
 //var msgMap = {};		//{phone-number : message-object[]}
-var grpMap = {};		//{phone-number : group-name[]}
+//var grpMap = {};		//{phone-number : group-name[]}
 //var userMap = {};		//{socket-id : phone-number}
     
 //var express = require('express')
@@ -186,6 +189,7 @@ io.sockets.on('connection', function (socket) {
   
   socket.on('disconnect', function(){
 	    log.debug('\n[ -------------- CLIENT (DIS)CONNECTED ('+socket.id+') ----------- ]');
+	    groups.removeGroups(socket.phone);
 	    delete socketDB.remove(socket.phone);
 	    //delete userMap[socket.id];
   });
@@ -195,14 +199,15 @@ io.sockets.on('connection', function (socket) {
 			if(result.error) {
 				log.error("CHAT GET USER ERROR: "+result.error);
 			} else {
-				var group = uuid.v4();
+				var groupName = uuid.v4();
 			  	log.debug("NEW GROUP CREATOR: '"+result.number+"'");
-				log.debug("NEW GROUP CREATED: '"+group+"'");
+				log.debug("NEW GROUP CREATED: '"+groupName+"'");
 				socket.phone = result.number;
 				userSocket = socketDB.getOrCreate(result.number, socket);
-				userSocket.group = group;
-				userSocket.join(group);
-		      	callback(group);
+				userSocket.group = groupName;
+				userSocket.join(groupName);
+				groups.add(groupName, new Group(groupName,userSocket.phone));
+		      	callback(groupName);
 			}
 	  });
   });
@@ -235,7 +240,7 @@ io.sockets.on('connection', function (socket) {
 	    data.numbers.forEach(function(number){
 	    	userSocket = socketDB.get(number);
 	    	var notification = {event:"remove-from-group",group:data.group,friend:socket.phone}
-	    	if(userSocket){
+	    	if(userSocket && groups.isGroupOwner(socket.phone,data.group)){
 	    		//userSocket.group = null;
 	    		userSocket.emit('notification',notification);
 	    		userSocket.leave(data.group);
