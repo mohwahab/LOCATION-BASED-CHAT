@@ -228,7 +228,8 @@ io.sockets.on('connection', function (socket) {
 	    		userSocket.emit('notification',notification);
 	    	}else{
 	    		log.debug("ADD TO GROUP USER: '"+number+"' NOT REGISTERED");
-	    		userGroups.add(number,notification);
+	    		//var userGroups = groupDB.get(result.number);
+	    		groupDB.add(number,notification);
 	    	}
 		});
   });
