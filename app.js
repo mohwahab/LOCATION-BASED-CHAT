@@ -189,7 +189,7 @@ io.sockets.on('connection', function (socket) {
   
   socket.on('disconnect', function(){
 	    log.debug('\n[ -------------- CLIENT (DIS)CONNECTED ('+socket.id+') ----------- ]');
-	    groups.removeGroups(socket.phone);
+	    //groups.removeGroups(socket.phone);
 	    delete socketDB.remove(socket.phone);
 	    //delete userMap[socket.id];
   });
@@ -206,7 +206,7 @@ io.sockets.on('connection', function (socket) {
 				userSocket = socketDB.getOrCreate(result.number, socket);
 				userSocket.group = groupName;
 				userSocket.join(groupName);
-				groups.add(groupName, new Group(groupName,userSocket.phone));
+				//groups.add(groupName, new Group(groupName,userSocket.phone));
 		      	callback(groupName);
 			}
 	  });
