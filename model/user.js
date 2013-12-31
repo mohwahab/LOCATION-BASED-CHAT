@@ -114,7 +114,7 @@ var User = function(){
 //			    	 }else{
 //			    		 retrievedUser.visible = true;
 //			    	 }
-			    	 //retrievedUser.visible = true;
+			    	 retrievedUser.visible = true;
 			    	 retrievedUser.save();
 			    	 var distance = dist * 1000;
 			    	 log.debug("[ NEAR CONTACTS:: Long: "+long+"  Lat: "+lat+"  Dist: "+distance+" ]");
@@ -127,7 +127,7 @@ var User = function(){
 			    	 },
                            $maxDistance : distance
 			    	 }
-			    	 //, visible: true
+			    	 , visible : {$exists:true}
 			    	 }, 'number loc -_id', callback);
 
 			    	 

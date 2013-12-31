@@ -346,7 +346,7 @@ describe("Chat Server",function(){
 	     	     	        	user.on('notification', function(notification){
 	     	     	        		notification.event.should.equal("add-to-group");
 	     	     	     			notification.group.should.equal(groupName);
-	     	     	     			notification.friend.should.equal(creator);
+	     	     	     			notification.by.should.equal(creator);
 		     	     	            user.disconnect();
 		     	     	            diconnectedCount++;
 		     	     	            if(diconnectedCount == 2){
@@ -408,7 +408,7 @@ describe("Chat Server",function(){
 	     	     	        	user.disconnect();
 	     	     	        	diconnectedCount++;
 	     	     	            if(diconnectedCount == 3){
-	     	     	            	console.log("ALL USERS DISCONNECTED");
+	     	     	            	//console.log("\nALL USERS DISCONNECTED");
 	     	     	            	done();
 	     	     	            };
 	     	     	        };
@@ -421,7 +421,7 @@ describe("Chat Server",function(){
      	     	     		user1.on('notification', function(notification){
 	     	     					notification.event.should.equal("leave-group");
 	     	     					notification.group.should.equal(groupName);
-	     	     					notification.friend.should.equal(user2.number);
+	     	     					notification.by.should.equal(user2.number);
 	     	     					disconnetUser(user1);
 	     	     			});
      	     	     		user2.on('connect', function(data){
@@ -440,7 +440,7 @@ describe("Chat Server",function(){
      	     	        		if(notification.event === 'leave-group'){
      	     	        			notification.event.should.equal("leave-group");
 	     	     	     			notification.group.should.equal(groupName);
-	     	     	     			notification.friend.should.equal(user2.number);
+	     	     	     			notification.by.should.equal(user2.number);
 	     	     	     			disconnetUser(user3);
      	     	        		}
      	     	     		});
@@ -452,5 +452,80 @@ describe("Chat Server",function(){
   	  });
   });
   
-  
+  it('Should be able to remove members from group', function(done){
+	  this.timeout(600000);  
+	  var user1;
+	  var user2;
+	  var user3;
+	  var creator = '01001252010';
+	  var numbers = ['01008993983','01108993983'];
+	  User.model.findOne({'number':creator},function(error,retrievedUser1){ 
+  		if(error) {
+		    console.log("\nGET CHAT USER ERROR: "+error);
+     	} else {
+     		User.model.findOne({'number': numbers[0]},function(error,retrievedUser2){ 
+     	  		if(error) {
+     			    console.log("\nGET CHAT USER ERROR: "+error);
+     	     	} else {
+     	     		User.model.findOne({'number': numbers[1]},function(error,retrievedUser3){ 
+     	     	  		if(error) {
+     	     			    console.log("\nGET CHAT USER ERROR: "+error);
+     	     	     	} else {
+     	     	     		user1 = io.connect(svrUrl, options);
+     	     	     	    user2 = io.connect(svrUrl, options);
+     	     	     	    user2.number = numbers[0];
+     	     	     	    user3 = io.connect(svrUrl, options);
+     	     	     	    user3.number = numbers[1];
+     	     	     	    var groupName = null;
+     	     	     	    var diconnectedCount = 0;
+     	     	     	    var addedMembers = 0;
+     	     	     	    var checkNotification = function(user,notification){
+	     	     	          	console.log("\nNOTIFICATION: ["+notification.event+"]");
+     	     	        		if(notification.event === 'add-to-group'){
+     	     	        			addedMembers++;     	     	        			
+     	     	        			if(addedMembers == 2){
+     	     	        				user1.emit('remove-from-group',{'group':groupName, 'numbers':numbers});
+     	     	        				disconnetUser(user1);
+     	     	        			}
+     	     	        		}else if(notification.event === 'remove-from-group'){
+     	     	        			notification.event.should.equal("remove-from-group");
+	     	     	     			notification.group.should.equal(groupName);
+	     	     	     			notification.by.should.equal(creator);
+	     	     	     			disconnetUser(user);
+     	     	        		}
+     	     	     	    };
+	     	     	        var disconnetUser = function(user){
+	     	     	        	user.disconnect();
+	     	     	        	diconnectedCount++;
+	     	     	            if(diconnectedCount == 3){
+	     	     	            	done();
+	     	     	            }
+	     	     	        };
+     	     	     		user1.on('connect', function(data){
+     	     	     			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
+     	     	     				groupName = group;
+     	     	     				user1.emit('add-to-group',{'group':groupName, 'numbers':numbers});
+     	     	     			});
+     	     	     		});
+     	     	     		user2.on('connect', function(data){
+     	     	     			user2.emit('register',{id:retrievedUser2._id});
+     	     	     		});
+     	     	     		user2.on('notification', function(notification){
+     	     	     			checkNotification(user2,notification);
+     	     	     		});
+     	     	     		user3.on('connect', function(data){
+     	     	     			user3.emit('register',{id:retrievedUser3._id}); 
+     	     	     		});
+     	     	     		user3.on('notification', function(notification){
+     	     	     			checkNotification(user3,notification);
+     	     	     		});
+     	     	     	}
+     	     	  	});
+     	     	}
+     	  	});
+     	}
+  	  });
+  });
 });
+
+//describe("Group Chat",function(){});

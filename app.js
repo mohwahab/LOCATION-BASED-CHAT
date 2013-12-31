@@ -173,17 +173,23 @@ io.sockets.on('connection', function (socket) {
   });
   
   socket.on('message', function(msg){
-    var fwmsg = {from:socket.phone, txt:msg.txt}
-    var userSocket = socketDB.get(msg.to);
-    log.debug("CHAT SEND MSG msg.from: "+socket.phone);
-    log.debug("CHAT SEND MSG msg: "+msg);
-    log.debug("CHAT SEND MSG msg.to: "+msg.to);
-    log.debug("CHAT SEND MSG userSocket: "+userSocket);
-    if(userSocket){
-    	userSocket.emit('message', fwmsg);
+    if(msg.group){
+    	log.debug("GROUP MSG CHAT (GROUP): "+msg.group);
+        log.debug("GROUP MSG CHAT (TXT): "+msg.txt);
+    	userSocket.broadcast.to(msg.group).emit('message', msg)
     }else{
-    	log.debug("CHAT SEND MSG: SOCKET IS NULL ");
-    	messageDB.add(msg.to,fwmsg);
+    	var fwmsg = {from:socket.phone, txt:msg.txt}
+        var userSocket = socketDB.get(msg.to);
+    	log.debug("CHAT SEND MSG msg.from: "+socket.phone);
+        log.debug("CHAT SEND MSG msg: "+msg);
+        log.debug("CHAT SEND MSG msg.to: "+msg.to);
+        log.debug("CHAT SEND MSG userSocket: "+userSocket);
+        if(userSocket){
+        	userSocket.emit('message', fwmsg);
+        }else{
+        	log.debug("CHAT SEND MSG: SOCKET IS NULL ");
+        	messageDB.add(msg.to,fwmsg);
+        }
     }
   });
   
@@ -206,7 +212,7 @@ io.sockets.on('connection', function (socket) {
 				userSocket = socketDB.getOrCreate(result.number, socket);
 				userSocket.group = groupName;
 				userSocket.join(groupName);
-				//groups.add(groupName, new Group(groupName,userSocket.phone));
+				groups.add(groupName, new Group(groupName,userSocket.phone));
 		      	callback(groupName);
 			}
 	  });
@@ -217,10 +223,10 @@ io.sockets.on('connection', function (socket) {
 	    var userSocket = null;
 	    data.numbers.forEach(function(number){
 	    	userSocket = socketDB.get(number);
-	    	var notification = {event:"add-to-group",group:data.group,friend:socket.phone}
+	    	var notification = {event:"add-to-group",group:data.group,by:socket.phone};
 	    	log.debug("ADD TO GROUP USER NOTIFICATION EVENT: ["+notification.event+"]");
     		log.debug("ADD TO GROUP USER NOTIFICATION GROUP: ["+notification.group+"]");
-    		log.debug("ADD TO GROUP USER NOTIFICATION FRIEND: ["+notification.friend+"]");
+    		log.debug("ADD TO GROUP USER NOTIFICATION BY: ["+notification.by+"]");
 	    	if(userSocket){
 	    		log.debug("ADD TO GROUP USER: '"+number+"' ADDED");
 	    		userSocket.group = data.group;
@@ -240,7 +246,10 @@ io.sockets.on('connection', function (socket) {
 	    var userSocket = null;
 	    data.numbers.forEach(function(number){
 	    	userSocket = socketDB.get(number);
-	    	var notification = {event:"remove-from-group",group:data.group,friend:socket.phone}
+	    	var notification = {event:"remove-from-group",group:data.group,by:socket.phone};
+	    	log.debug("REMOVE FROM GROUP USER NOTIFICATION EVENT: ["+notification.event+"]");
+    		log.debug("REMOVE FROM GROUP USER NOTIFICATION GROUP: ["+notification.group+"]");
+    		log.debug("REMOVE FROM GROUP USER NOTIFICATION BY: ["+notification.by+"]");
 	    	if(userSocket && groups.isGroupOwner(socket.phone,data.group)){
 	    		//userSocket.group = null;
 	    		userSocket.emit('notification',notification);
@@ -250,7 +259,7 @@ io.sockets.on('connection', function (socket) {
   });
  
   socket.on('leave-group', function(group){
-	  var notification = {event:"leave-group",group:group.name,friend:socket.phone}
+	  var notification = {event:"leave-group",group:group.name,by:socket.phone}
 	  socket.broadcast.to(group.name).emit('notification', notification);
 	  socket.leave(group.name);
   }); 
