@@ -176,7 +176,7 @@ io.sockets.on('connection', function (socket) {
     if(msg.group){
     	log.debug("GROUP MSG CHAT (GROUP): "+msg.group);
         log.debug("GROUP MSG CHAT (TXT): "+msg.txt);
-    	userSocket.broadcast.to(msg.group).emit('message', msg)
+        socket.broadcast.to(msg.group).emit('message', msg)
     }else{
     	var fwmsg = {from:socket.phone, txt:msg.txt}
         var userSocket = socketDB.get(msg.to);
