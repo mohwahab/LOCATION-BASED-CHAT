@@ -101,7 +101,7 @@ var User = function(){
 //	   };
 	   
 	   
-	   var _findNearContacts = function(id, long, lat, dist, hide, callback){
+	   var _findNearContacts = function(id, long, lat, dist, callback){
 		    _model.findById(id, function(error, retrievedUser) {
 		    	if(error) {
 			    	 console.log("\nHERE:  _findNearContacts: (ERROR)> "+error);
@@ -109,11 +109,6 @@ var User = function(){
 			    	 retrievedUser.loc.coordinates = [parseFloat(long), parseFloat(lat)];
 //			    	 TODO Uncomment
 //			    	 retrievedUser.online = true;
-//			    	 if(hide){
-//			    		 retrievedUser.visible = false;
-//			    	 }else{
-//			    		 retrievedUser.visible = true;
-//			    	 }
 			    	 retrievedUser.visible = true;
 			    	 retrievedUser.save();
 			    	 var distance = dist * 1000;
@@ -128,7 +123,9 @@ var User = function(){
                            $maxDistance : distance
 			    	 }
 			    	 , visible : {$exists:true}
-			    	 }, 'number loc -_id', callback);
+			    	 }, 'number loc -_id', function(error,nearContacts){
+			    		 callback(error, {number: retrievedUser.number, contacts: nearContacts});
+			    	 });
 
 			    	 
 			     }

@@ -89,8 +89,10 @@ afterEach(function(done){
 describe('User', function(){
 			
     it("Should be able to return nearby friends  ", function(done){
+    	this.timeout(600000);
     	var testUserId = null;
-    	var testUser = { name: 'Mohamed Abd El Wahab', number: '01001953010', loc: { type: 'Point', coordinates: [ parseFloat(41.102711), parseFloat(40.018571)] }};
+    	var testUserNumber = '01001953010';
+    	var testUser = { name: 'Mohamed Abd El Wahab', number: testUserNumber, loc: { type: 'Point', coordinates: [ parseFloat(41.102711), parseFloat(40.018571)] }};
     	User.model.create(testUser,function(error,user){
 				if(error) {
 			         console.log("\nADD USER ERROR: "+error);
@@ -101,29 +103,60 @@ describe('User', function(){
 						if(error) {
 					         console.log("\nADD USER CONTACTS ERROR: "+error);
 						} else {
-					        request
-					            .get(svrUrl+'/near/'+testUserId+'/31.102711/30.018571/10?')
-					            .end(function(res){
-					            	//console.log("\n RESPONSE BODY: "+res.body);
-					                res.should.be.json;
-					                res.body.contacts.should.eql([   { number: '01001252010', loc: { type: 'Point', coordinates: [ 31.102711, 30.018571 ] }},
-					                                                 { number: '01208993983', loc: { type: 'Point', coordinates: [ 31.027054, 30.073254 ] }}//,
-					                                                 //{ number: '01108993983', loc: [ 32.099865, 30.121395 ] }
-					                                             ]);
-					                User.model.findById(testUserId, function(error, retrievedUser) {
-					                	if(error) {
-					   			         	console.log("\nGET RETRIEVED USER ERROR: "+error);
-					   		         	} else {
-					   		         		//console.log("\nGET RETRIEVED USER: \n"+retrievedUser+"\n");
-//					   		         		TODO Uncomment
-//					   		         		retrievedUser.visible.should.equal(true);
-//					   		         		retrievedUser.online.should.equal(true);
-					   		         		retrievedUser.loc.coordinates.should.include(31.102711);
-					   		         		retrievedUser.loc.coordinates.should.include(30.018571);
-					   		         	}
-					   		        });
-					                done();
-					            });
+							var diconnectedCount = 0 ;
+							var registeredCount = 0 ;
+							var contact1 = io.connect(svrUrl, options);
+     	     	     	    var contact2 = io.connect(svrUrl, options);
+     	     	     	    
+     	     	     	    var checkRegister = function(){	     	     	        	
+     	     	     	    	registeredCount++;
+	     	     	            if(registeredCount == 2){
+	     	     	            	request
+						            .get(svrUrl+'/near/'+testUserId+'/31.102711/30.018571/10?')
+						            .end(function(res){
+						            	//console.log("\n RESPONSE BODY: "+JSON.stringify(res.body));
+						                res.should.be.json;
+						                res.body.contacts.should.eql([   { number: '01001252010', loc: { type: 'Point', coordinates: [ 31.102711, 30.018571 ] }},
+						                                                 { number: '01208993983', loc: { type: 'Point', coordinates: [ 31.027054, 30.073254 ] }}//,
+						                                                 //{ number: '01108993983', loc: [ 32.099865, 30.121395 ] }
+						                                             ]);
+						                User.model.findById(testUserId, function(error, retrievedUser) {
+						                	if(error) {
+						   			         	console.log("\nGET RETRIEVED USER ERROR: "+error);
+						   		         	} else {						   		         		
+//						   		         		TODO Uncomment
+						   		         		retrievedUser.visible.should.equal(true);
+//						   		         		retrievedUser.online.should.equal(true);
+						   		         		retrievedUser.loc.coordinates.should.include(31.102711);
+						   		         		retrievedUser.loc.coordinates.should.include(30.018571);						   		         
+						   		         	}
+						   		        });					    
+						            });
+	     	     	            }
+	     	     	        };
+     	     	     	    var chatRegister = function(contact,id){
+     	     	     	    	contact.on('connect', function(data){
+     	     	     	    		contact.emit('register',{id:id}, checkRegister);			          	     			
+		          	     		});
+	     	     	        };
+	     	     	        var disconnetUser = function(contact){
+	     	     	        	contact.disconnect();
+	     	     	        	diconnectedCount++;
+	     	     	            if(diconnectedCount == 2){
+	     	     	            	done();
+	     	     	            }
+	     	     	        };
+	     	     	        var checkNotification = function(contact){
+	     	     	        	contact.on("notification",function(notification){
+	     	     	        		notification.event.should.equal("near-by");
+	     	     	     			notification.contact.should.equal(testUserNumber);					     	     	     			
+	     	     	     			disconnetUser(contact);
+	     	     	        	});
+	     	     	        };
+	     	     	        chatRegister(contact1,testUsers['01001252010']);
+	     	     	        chatRegister(contact2,testUsers['01208993983']);
+	     	     	        checkNotification(contact1);
+	     	     	        checkNotification(contact2);
 						}
 					});
 			}
@@ -237,66 +270,8 @@ describe('User', function(){
     
 });
 
-describe("Chat Server",function(){
-  it('Should be able to receive and forward messages', function(done){
-	  this.timeout(600000);  
-	  var user1;
-	  var user2;
-	  
-	  User.model.findOne({'number':'01001252010'},function(error,retrievedUser1){ 
-  		if(error) {
-		    console.log("\nGET CHAT USER ERROR: "+error);
-     	} else {
-     		User.model.findOne({'number':'01008993983'},function(error,retrievedUser2){ 
-     	  		if(error) {
-     			    console.log("\nGET CHAT USER ERROR: "+error);
-     	     	} else {
-     	     		user1 = io.connect(svrUrl, options);
-     	     	    user2 = io.connect(svrUrl, options);
-     	     		user1.on('connect', function(data){
-     	     			user1.emit('register',{id:retrievedUser1._id});
-     	     			user1.emit('message', {to:'01008993983', txt:'Hello Sarah ;)'});
-     	     		});
-     	     		user1.on('message', function(msg){
-     	     			msg.should.eql({from:'01008993983', txt:'Hello Ahmed :)'});
-     	     			user1.disconnect();
-     	     			user2.disconnect();
-     	     			done();
-     	     		});
-     	     		user2.on('connect', function(data){
-     	     			user2.emit('register',{id:retrievedUser2._id}); 
-     	     		});
-     	     		user2.on('message', function(msg){
-     	     			user2.emit('message', {to:'01001252010', txt:'Hello Ahmed :)'});
-     	     		});
-     	     	}
-     	  	});
-     	}
-  	  });
-  });
-  
-//  it('Should be able to create group chat', function(done){
-//	  var user = io.connect(svrUrl, options);
-//	  var number = {'number':'01008993983'};
-//	  User.model.findOne(number,function(error,retrievedUser){ 
-//	  		if(error) {
-//			    console.log("\nCREATE GROUP CHAT GET USER ERROR: "+error);
-//	     	} else {
-//	     		user = io.connect(svrUrl, options);
-//	     		user.on('connect', function(data){
-//	     			user.emit('register',{id:retrievedUser._id});
-//	     			user.emit('create-group', number, function(group){
-//	     				//user.group.should.equal(group);
-//	    				group.length.should.equal(36);
-//	    				user.disconnect();
-//	    				done();
-//	    			});
-//	     		});
-//	     	}
-//	  });
-//  });
-  
-  
+describe("Chat Server",function(){ 
+	
   it('Should be able to create group chat', function(done){
 	  User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
 	  		if(error) {
@@ -317,296 +292,229 @@ describe("Chat Server",function(){
 	  });
   });
   
-  
-  it('Should be able to add members to group', function(done){
-	  this.timeout(600000);  
-	  var user1;
-	  var user2;
-	  var user3;
-	  var creator = '01001252010';
-	  var numbers = ['01008993983','01108993983'];
-	  User.model.findOne({'number':creator},function(error,retrievedUser1){ 
-  		if(error) {
-		    console.log("\nGET CHAT USER ERROR: "+error);
-     	} else {
-     		User.model.findOne({'number': numbers[0]},function(error,retrievedUser2){ 
-     	  		if(error) {
-     			    console.log("\nGET CHAT USER ERROR: "+error);
-     	     	} else {
-     	     		User.model.findOne({'number': numbers[1]},function(error,retrievedUser3){ 
-     	     	  		if(error) {
-     	     			    console.log("\nGET CHAT USER ERROR: "+error);
-     	     	     	} else {
-     	     	     		user1 = io.connect(svrUrl, options);
-     	     	     	    user2 = io.connect(svrUrl, options);
-     	     	     	    user3 = io.connect(svrUrl, options);
-     	     	     	    var groupName = null;
-     	     	     	    var diconnectedCount = 0;
-	     	     	        var checkNotification = function(user){
-	     	     	        	user.on('notification', function(notification){
-	     	     	        		notification.event.should.equal("add-to-group");
-	     	     	     			notification.group.should.equal(groupName);
-	     	     	     			notification.by.should.equal(creator);
-		     	     	            user.disconnect();
-		     	     	            diconnectedCount++;
-		     	     	            if(diconnectedCount == 2){
-		     	     	            	done();
-		     	     	            };
-	     	     	          });
-	     	     	        };
-     	     	     		user1.on('connect', function(data){
-     	     	     			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
-     	     	     				groupName = group;
-     	     	     				user1.emit('add-to-group',{'group':groupName, 'numbers':numbers});
-     	     	     				user1.disconnect();
-     	     	     			});     	     
-     	     	     		});
-     	     	     		user2.on('connect', function(data){
-     	     	     			user2.emit('register',{id:retrievedUser2._id});
-     	     	     			checkNotification(user2);
-     	     	     		});
-     	     	     		user3.on('connect', function(data){
-     	     	     			user3.emit('register',{id:retrievedUser3._id}); 
-     	     	     			checkNotification(user3);
-     	     	     		});
-     	     	     	}
-     	     	  	});
-     	     	}
-     	  	});
-     	}
-  	  });
-  });
-  
-  
-  it('Should be able to leave group', function(done){
-	  this.timeout(600000);  
-	  var user1;
-	  var user2;
-	  var user3;
-	  var creator = '01001252010';
-	  var numbers = ['01008993983','01108993983'];
-	  User.model.findOne({'number':creator},function(error,retrievedUser1){ 
-  		if(error) {
-		    console.log("\nGET CHAT USER ERROR: "+error);
-     	} else {
-     		User.model.findOne({'number': numbers[0]},function(error,retrievedUser2){ 
-     	  		if(error) {
-     			    console.log("\nGET CHAT USER ERROR: "+error);
-     	     	} else {
-     	     		User.model.findOne({'number': numbers[1]},function(error,retrievedUser3){ 
-     	     	  		if(error) {
-     	     			    console.log("\nGET CHAT USER ERROR: "+error);
-     	     	     	} else {
-     	     	     		user1 = io.connect(svrUrl, options);
-     	     	     	    user2 = io.connect(svrUrl, options);
-     	     	     	    user2.number = numbers[0];
-     	     	     	    user3 = io.connect(svrUrl, options);
-     	     	     	    user3.number = numbers[1];
-     	     	     	    var groupName = null;
-     	     	     	    var diconnectedCount = 0;
-	     	     	        var disconnetUser = function(user){
-	     	     	        	user.disconnect();
-	     	     	        	diconnectedCount++;
-	     	     	            if(diconnectedCount == 3){
-	     	     	            	//console.log("\nALL USERS DISCONNECTED");
-	     	     	            	done();
-	     	     	            };
-	     	     	        };
-     	     	     		user1.on('connect', function(data){
-     	     	     			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
-     	     	     				groupName = group;
-     	     	     				user1.emit('add-to-group',{'group':groupName, 'numbers':numbers});
-     	     	     			});
-     	     	     		});
-     	     	     		user1.on('notification', function(notification){
-	     	     					notification.event.should.equal("leave-group");
-	     	     					notification.group.should.equal(groupName);
-	     	     					notification.by.should.equal(user2.number);
-	     	     					disconnetUser(user1);
-	     	     			});
-     	     	     		user2.on('connect', function(data){
-     	     	     			user2.emit('register',{id:retrievedUser2._id});
-     	     	     		});
-     	     	     		user2.on('notification', function(notification){
-     	     	        		if(notification.event === 'add-to-group'){
-     	     	        			user2.emit('leave-group',{name:groupName});
-     	     	        			disconnetUser(user2);
-     	     	        		}
-     	     	     		});
-     	     	     		user3.on('connect', function(data){
-     	     	     			user3.emit('register',{id:retrievedUser3._id}); 
-     	     	     		});
-     	     	     		user3.on('notification', function(notification){
-     	     	        		if(notification.event === 'leave-group'){
-     	     	        			notification.event.should.equal("leave-group");
-	     	     	     			notification.group.should.equal(groupName);
-	     	     	     			notification.by.should.equal(user2.number);
-	     	     	     			disconnetUser(user3);
-     	     	        		}
-     	     	     		});
-     	     	     	}
-     	     	  	});
-     	     	}
-     	  	});
-     	}
-  	  });
-  });
-  
-  it('Should be able to remove members from group', function(done){
-	  this.timeout(600000);  
-	  var user1;
-	  var user2;
-	  var user3;
-	  var creator = '01001252010';
-	  var numbers = ['01008993983','01108993983'];
-	  User.model.findOne({'number':creator},function(error,retrievedUser1){ 
-  		if(error) {
-		    console.log("\nGET CHAT USER ERROR: "+error);
-     	} else {
-     		User.model.findOne({'number': numbers[0]},function(error,retrievedUser2){ 
-     	  		if(error) {
-     			    console.log("\nGET CHAT USER ERROR: "+error);
-     	     	} else {
-     	     		User.model.findOne({'number': numbers[1]},function(error,retrievedUser3){ 
-     	     	  		if(error) {
-     	     			    console.log("\nGET CHAT USER ERROR: "+error);
-     	     	     	} else {
-     	     	     		user1 = io.connect(svrUrl, options);
-     	     	     	    user2 = io.connect(svrUrl, options);
-     	     	     	    user2.number = numbers[0];
-     	     	     	    user3 = io.connect(svrUrl, options);
-     	     	     	    user3.number = numbers[1];
-     	     	     	    var groupName = null;
-     	     	     	    var diconnectedCount = 0;
-     	     	     	    var addedMembers = 0;
-     	     	     	    var checkNotification = function(user,notification){
-	     	     	          	//console.log("\nNOTIFICATION: ["+notification.event+"]");
-     	     	        		if(notification.event === 'add-to-group'){
-     	     	        			addedMembers++;     	     	        			
-     	     	        			if(addedMembers == 2){
-     	     	        				user1.emit('remove-from-group',{'group':groupName, 'numbers':numbers});
-     	     	        				disconnetUser(user1);
-     	     	        			}
-     	     	        		}else if(notification.event === 'remove-from-group'){
-     	     	        			notification.event.should.equal("remove-from-group");
-	     	     	     			notification.group.should.equal(groupName);
-	     	     	     			notification.by.should.equal(creator);
-	     	     	     			disconnetUser(user);
-     	     	        		}
-     	     	     	    };
-	     	     	        var disconnetUser = function(user){
-	     	     	        	user.disconnect();
-	     	     	        	diconnectedCount++;
-	     	     	            if(diconnectedCount == 3){
-	     	     	            	done();
-	     	     	            }
-	     	     	        };
-     	     	     		user1.on('connect', function(data){
-     	     	     			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
-     	     	     				groupName = group;
-     	     	     				user1.emit('add-to-group',{'group':groupName, 'numbers':numbers});
-     	     	     			});
-     	     	     		});
-     	     	     		user2.on('connect', function(data){
-     	     	     			user2.emit('register',{id:retrievedUser2._id});
-     	     	     		});
-     	     	     		user2.on('notification', function(notification){
-     	     	     			checkNotification(user2,notification);
-     	     	     		});
-     	     	     		user3.on('connect', function(data){
-     	     	     			user3.emit('register',{id:retrievedUser3._id}); 
-     	     	     		});
-     	     	     		user3.on('notification', function(notification){
-     	     	     			checkNotification(user3,notification);
-     	     	     		});
-     	     	     	}
-     	     	  	});
-     	     	}
-     	  	});
-     	}
-  	  });
-  });
+  describe("Group Chat",function(){
+		
+		var user1;
+		var user2;
+		var user3;
+		var retrievedUser1;
+		var retrievedUser2;
+		var retrievedUser3;
+		var testUser = '01001252010';
+		var testContacts = ['01008993983','01108993983'];
+		
+		var registerCallback = function(){};
+		
+		var diconnectedCount = 0;
+	    var disconnetUser = function(user, done){
+	    	user.disconnect();
+	    	diconnectedCount++;
+	        if(diconnectedCount == 3){
+	        	diconnectedCount = 0;
+	        	done();
+	        };
+	    };
+		
+		beforeEach(function(done){
+			  User.model.findOne({'number':testUser},function(error,retrievedUser){ 
+		  		if(error) {
+				    console.log("\nGET CHAT USER ERROR: "+error);
+		     	} else {
+		     		retrievedUser1 = retrievedUser;
+		     		User.model.findOne({'number': testContacts[0]},function(error,retrievedUser){ 
+		     	  		if(error) {
+		     			    console.log("\nGET CHAT USER ERROR: "+error);
+		     	     	} else {
+		     	     		retrievedUser2 = retrievedUser;
+		     	     		User.model.findOne({'number': testContacts[1]},function(error,retrievedUser){ 
+		     	     	  		if(error) {
+		     	     			    console.log("\nGET CHAT USER ERROR: "+error);
+		     	     	     	} else {
+		     	     	     		retrievedUser3 = retrievedUser;
+		     	     	     		user1 = io.connect(svrUrl, options);
+		     	     	     	    user2 = io.connect(svrUrl, options);
+		     	     	     	    user2.number = testContacts[0];
+		     	     	     	    user3 = io.connect(svrUrl, options);
+		     	     	     	    user3.number = testContacts[1];
+		     	     	     	    done();
+		     	     	     	}
+		     	     	  	});
+		     	     	}
+		     	  	});
+		     	}
+		  	  });
 
-  
-  it('Should be able to message group members', function(done){
-	  this.timeout(600000);  
-	  var user1;
-	  var user2;
-	  var user3;
-	  var creator = '01001252010';
-	  var numbers = ['01008993983','01108993983'];
-	  User.model.findOne({'number':creator},function(error,retrievedUser1){ 
-  		if(error) {
-		    console.log("\nGET CHAT USER ERROR: "+error);
-     	} else {
-     		User.model.findOne({'number': numbers[0]},function(error,retrievedUser2){ 
-     	  		if(error) {
-     			    console.log("\nGET CHAT USER ERROR: "+error);
-     	     	} else {
-     	     		User.model.findOne({'number': numbers[1]},function(error,retrievedUser3){ 
-     	     	  		if(error) {
-     	     			    console.log("\nGET CHAT USER ERROR: "+error);
-     	     	     	} else {
-     	     	     		user1 = io.connect(svrUrl, options);
-     	     	     	    user2 = io.connect(svrUrl, options);
-     	     	     	    user2.number = numbers[0];
-     	     	     	    user3 = io.connect(svrUrl, options);
-     	     	     	    user3.number = numbers[1];
-     	     	     	    var groupName = null;
-     	     	     	    var message = "Hi all :)"
-     	     	     	    var diconnectedCount = 0;
-     	     	     	    var addedMembers = 0;
-     	     	     	    var checkNotification = function(user,notification){
-	     	     	          	//console.log("\nNOTIFICATION: ["+notification.event+"]");
-     	     	        		if(notification.event === 'add-to-group'){
-     	     	        			addedMembers++;     	     	        			
-     	     	        			if(addedMembers == 2){
-     	     	        				user1.emit('message',{'group':groupName, 'txt':message});
-     	     	        				disconnetUser(user1);
-     	     	        			}
-     	     	        		}
-     	     	     	    };
-	     	     	        var disconnetUser = function(user){
-	     	     	        	user.disconnect();
-	     	     	        	diconnectedCount++;
-	     	     	            if(diconnectedCount == 3){
-	     	     	            	done();
-	     	     	            }
-	     	     	        };
-	     	     	      var checkMessage = function(user){
-	     	     	        	user.on('message', function(msg){
-	     	     	        		msg.should.eql({group:groupName, txt:message});
-	     	     	        		disconnetUser(user);
-	     	     	        	});
-	     	     	        };
-     	     	     		user1.on('connect', function(data){
-     	     	     			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
-     	     	     				groupName = group;
-     	     	     				user1.emit('add-to-group',{'group':groupName, 'numbers':numbers});
-     	     	     			});
-     	     	     		});
-     	     	     		user2.on('connect', function(data){
-     	     	     			user2.emit('register',{id:retrievedUser2._id});
-     	     	     			checkMessage(user2);
-     	     	     		});
-     	     	     		user2.on('notification', function(notification){
-     	     	     			checkNotification(user2,notification);
-     	     	     		});
-     	     	     		user3.on('connect', function(data){
-     	     	     			user3.emit('register',{id:retrievedUser3._id}); 
-     	     	     			checkMessage(user3);
-     	     	     		});
-     	     	     		user3.on('notification', function(notification){
-     	     	     			checkNotification(user3,notification);
-     	     	     		});
-     	     	     	}
-     	     	  	});
-     	     	}
-     	  	});
-     	}
-  	  });
-  });
+		});
+		
+		it('Should be able to receive and forward messages', function(done){
+				user1.on('connect', function(data){
+	    			user1.emit('register',{id:retrievedUser1._id}, registerCallback);
+	    			user1.emit('message', {to:testContacts[0], txt:'Hello Sarah ;)'});
+	    		});
+	    		user1.on('message', function(msg){
+	    			msg.should.eql({from:testContacts[0], txt:'Hello Ahmed :)'});
+	    			user1.disconnect();
+	    			user2.disconnect();
+	    			user3.disconnect();
+	    			done();
+	    		});
+	    		user2.on('connect', function(data){
+	    			user2.emit('register',{id:retrievedUser2._id}, registerCallback); 
+	    		});
+	    		user2.on('message', function(msg){
+	    			user2.emit('message', {to:testUser, txt:'Hello Ahmed :)'});
+	    		});
+		});
+		
+		
+		  it('Should be able to add members to group', function(done){
+			  this.timeout(600000);  
+			  var groupName = null;
+			  var checkNotification = function(user){
+	        	user.on('notification', function(notification){
+	        		notification.event.should.equal("add-to-group");
+	     			notification.group.should.equal(groupName);
+	     			notification.by.should.equal(testUser);
+	     			disconnetUser(user, done);
+	          });
+	        };
+	 		user1.on('connect', function(data){
+	 			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
+	 				groupName = group;
+	 				user1.emit('add-to-group',{'group':groupName, 'numbers':testContacts}); //TODO change "numbers" to "contacts" or "members"
+	 				//user1.disconnect();
+	 				disconnetUser(user1, done);
+	 			});     	     
+	 		});
+	 		user2.on('connect', function(data){
+	 			user2.emit('register',{id:retrievedUser2._id}, registerCallback);
+	 			checkNotification(user2);
+	 		});
+	 		user3.on('connect', function(data){
+	 			user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
+	 			checkNotification(user3);
+	 		});
+			  
+		});
+		  	  
+		it('Should be able to leave group', function(done){
+			var groupName = null;
+	   		user1.on('connect', function(data){
+	   			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
+	   				groupName = group;
+	   				user1.emit('add-to-group',{'group':groupName, 'numbers':testContacts});
+	   			});
+	   		});
+	   		user1.on('notification', function(notification){
+						notification.event.should.equal("leave-group");
+						notification.group.should.equal(groupName);
+						notification.by.should.equal(user2.number);
+						disconnetUser(user1, done);
+				});
+	   		user2.on('connect', function(data){
+	   			user2.emit('register',{id:retrievedUser2._id}, registerCallback);
+	   		});
+	   		user2.on('notification', function(notification){
+	      		if(notification.event === 'add-to-group'){
+	      			user2.emit('leave-group',{name:groupName});
+	      			disconnetUser(user2, done);
+	      		}
+	   		});
+	   		user3.on('connect', function(data){
+	   			user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
+	   		});
+	   		user3.on('notification', function(notification){
+	      		if(notification.event === 'leave-group'){
+	      			notification.event.should.equal("leave-group");
+		     			notification.group.should.equal(groupName);
+		     			notification.by.should.equal(user2.number);
+		     			disconnetUser(user3, done);
+	      		}
+	   		});
+
+		});
+
+	  it('Should be able to remove members from group', function(done){
+		    this.timeout(600000);
+		    var groupName = null;
+	   	    var addedMembers = 0;
+	   	    var checkNotification = function(user,notification){
+	      		if(notification.event === 'add-to-group'){
+	      			addedMembers++;     	     	        			
+	      			if(addedMembers == 2){
+	      				user1.emit('remove-from-group',{'group':groupName, 'numbers':testContacts});
+	      				disconnetUser(user1, done);
+	      			}
+	      		}else if(notification.event === 'remove-from-group'){
+	      			notification.event.should.equal("remove-from-group");
+		     			notification.group.should.equal(groupName);
+		     			notification.by.should.equal(testUser);
+		     			disconnetUser(user, done);
+	      		}
+	   	    };
+	   		user1.on('connect', function(data){
+	   			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
+	   				groupName = group;
+	   				user1.emit('add-to-group',{'group':groupName, 'numbers':testContacts});
+	   			});
+	   		});
+	   		user2.on('connect', function(data){
+	   			user2.emit('register',{id:retrievedUser2._id}, registerCallback);
+	   		});
+	   		user2.on('notification', function(notification){
+	   			checkNotification(user2,notification);
+	   		});
+	   		user3.on('connect', function(data){
+	   			user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
+	   		});
+	   		user3.on('notification', function(notification){
+	   			checkNotification(user3,notification);
+	   		});
+
+	  });
+		
+	  it('Should be able to message group members', function(done){
+		  	this.timeout(600000);
+		  	var groupName = null;
+	 	    var message = "Hi all :)"
+	 	    var addedMembers = 0;
+	 	    var checkNotification = function(user,notification){
+	    		if(notification.event === 'add-to-group'){
+	    			addedMembers++;     	     	        			
+	    			if(addedMembers == 2){
+	    				user1.emit('message',{'group':groupName, 'txt':message});
+	    				disconnetUser(user1, done);
+	    			}
+	    		}
+	 	  };
+	      var checkMessage = function(user){
+	        	user.on('message', function(msg){
+	        		msg.should.eql({group:groupName, txt:message});
+	        		disconnetUser(user, done);
+	        	});
+	      };
+	      user1.on('connect', function(data){
+			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
+				groupName = group;
+				user1.emit('add-to-group',{'group':groupName, 'numbers':testContacts});
+			});
+	      });
+	      user2.on('connect', function(data){
+			user2.emit('register',{id:retrievedUser2._id}, registerCallback);
+			checkMessage(user2);
+	      });
+	      user2.on('notification', function(notification){
+			checkNotification(user2,notification);
+	      });
+	      user3.on('connect', function(data){
+			user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
+			checkMessage(user3);
+	      });
+	      user3.on('notification', function(notification){
+			checkNotification(user3,notification);
+	      });
+
+	  });
+	});
   
 });
-
-//describe("Group Chat",function(){});

@@ -125,21 +125,29 @@ app.post('/show/:id', function(req, res) {
 
 app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
 	log.info("[ "+req.method+" /near/"+req.params.id+"/"+req.params.long+"/"+req.params.lat+"/"+req.params.dist+" ]");
-	//TODO Notify friends in region with his location 
-	User.findNearContacts(req.params.id, req.params.long, req.params.lat, req.params.dist, false, function(error, nearContacts){
+	User.findNearContacts(req.params.id, req.params.long, req.params.lat, req.params.dist, function(error, user){
 	     if(error) {
 	    	 log.error("ERROR: "+error);
 	    	 res.json(500, { error: result.error });
 	     }else{
 	    	 //console.log("NEAR CONTACTS: "+nearContacts+"\n\n");
-	    	 res.json({contacts : nearContacts});
+	    	 //TODO Notify friends in region with his location 
+	    	 var userSocket = null;
+	    	 var notification = {event:"near-by",contact:user.number};	    	 
+	    	 user.contacts.forEach(function(contact){	    		 
+	    		 userSocket = socketDB.get(contact.number);
+	    		 if(userSocket){	    			 
+	    			 userSocket.emit('notification',notification);
+	    		 }
+	    	 });
+	    	 res.json({contacts : user.contacts});
 	     }
 	 });
 });
 
 io.sockets.on('connection', function (socket) {
   log.debug('\n[ -------------- CLIENT CONNECTED ('+socket.id+') ----------- ]');
-  socket.on('register', function(user){
+  socket.on('register', function(user,callback){
 	  User.getNumber(user.id, function(result) {
       			if(result.error) {
       				log.error("CHAT GET USER ERROR: "+result.error);
@@ -168,6 +176,7 @@ io.sockets.on('connection', function (socket) {
 	         			});
 	         			userGroups.clear(result.number);
 	         		}
+	         		callback();
 	         	}
 	  });
   });
