@@ -1,6 +1,7 @@
 function Group(name, owner) {
   this.name = name;
   this.owner = owner;
+  this.members = [];
 };
 
 //Room.prototype.addPerson = function(personID) {
@@ -20,15 +21,15 @@ function Group(name, owner) {
 //  this.people.remove(personIndex);
 //};
 //
-//Room.prototype.getPerson = function(personID) {
-//  var person = null;
-//  for(var i = 0; i < this.people.length; i++) {
-//    if(this.people[i].id == personID) {
-//      person = this.people[i];
+//Group.prototype.getMember = function(id) {
+//  var member = null;
+//  for(var i = 0; i < this.members.length; i++) {
+//    if(this.members[i] == id) {
+//    	member = this.members[i];
 //      break;
 //    }
 //  }
-//  return person;
+//  return member;
 //};
 
 //Room.prototype.isAvailable = function() {

@@ -92,6 +92,7 @@ describe('User', function(){
     	this.timeout(600000);
     	var testUserId = null;
     	var testUserNumber = '01001953010';
+    	var userLoc = [31.102711,30.018571]; // [long,lat]
     	var testUser = { name: 'Mohamed Abd El Wahab', number: testUserNumber, loc: { type: 'Point', coordinates: [ parseFloat(41.102711), parseFloat(40.018571)] }};
     	User.model.create(testUser,function(error,user){
 				if(error) {
@@ -112,7 +113,7 @@ describe('User', function(){
      	     	     	    	registeredCount++;
 	     	     	            if(registeredCount == 2){
 	     	     	            	request
-						            .get(svrUrl+'/near/'+testUserId+'/31.102711/30.018571/10?')
+						            .get(svrUrl+'/near/'+testUserId+'/'+userLoc[0]+'/'+userLoc[1]+'/10?')
 						            .end(function(res){
 						            	//console.log("\n RESPONSE BODY: "+JSON.stringify(res.body));
 						                res.should.be.json;
@@ -127,8 +128,8 @@ describe('User', function(){
 //						   		         		TODO Uncomment
 						   		         		retrievedUser.visible.should.equal(true);
 //						   		         		retrievedUser.online.should.equal(true);
-						   		         		retrievedUser.loc.coordinates.should.include(31.102711);
-						   		         		retrievedUser.loc.coordinates.should.include(30.018571);						   		         
+						   		         		retrievedUser.loc.coordinates.should.include(userLoc[0]);
+						   		         		retrievedUser.loc.coordinates.should.include(userLoc[1]);						   		         
 						   		         	}
 						   		        });					    
 						            });
@@ -149,7 +150,9 @@ describe('User', function(){
 	     	     	        var checkNotification = function(contact){
 	     	     	        	contact.on("notification",function(notification){
 	     	     	        		notification.event.should.equal("near-by");
-	     	     	     			notification.contact.should.equal(testUserNumber);					     	     	     			
+	     	     	     			notification.contact.should.equal(testUserNumber);
+	     	     	     			notification.loc.should.include(userLoc[0].toString());
+	     	     	     			notification.loc.should.include(userLoc[1].toString());
 	     	     	     			disconnetUser(contact);
 	     	     	        	});
 	     	     	        };
@@ -270,8 +273,7 @@ describe('User', function(){
     
 });
 
-describe("Chat Server",function(){ 
-	
+describe("Chat Server",function(){  
   it('Should be able to create group chat', function(done){
 	  User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
 	  		if(error) {
@@ -381,7 +383,7 @@ describe("Chat Server",function(){
 	 		user1.on('connect', function(data){
 	 			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
 	 				groupName = group;
-	 				user1.emit('add-to-group',{'group':groupName, 'numbers':testContacts}); //TODO change "numbers" to "contacts" or "members"
+	 				user1.emit('add-to-group',{'group':groupName, 'members':testContacts}); //TODO change "numbers" to "contacts" or "members"
 	 				//user1.disconnect();
 	 				disconnetUser(user1, done);
 	 			});     	     
@@ -402,7 +404,7 @@ describe("Chat Server",function(){
 	   		user1.on('connect', function(data){
 	   			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
 	   				groupName = group;
-	   				user1.emit('add-to-group',{'group':groupName, 'numbers':testContacts});
+	   				user1.emit('add-to-group',{'group':groupName, 'members':testContacts});
 	   			});
 	   		});
 	   		user1.on('notification', function(notification){
@@ -442,7 +444,7 @@ describe("Chat Server",function(){
 	      		if(notification.event === 'add-to-group'){
 	      			addedMembers++;     	     	        			
 	      			if(addedMembers == 2){
-	      				user1.emit('remove-from-group',{'group':groupName, 'numbers':testContacts});
+	      				user1.emit('remove-from-group',{'group':groupName, 'members':testContacts});
 	      				disconnetUser(user1, done);
 	      			}
 	      		}else if(notification.event === 'remove-from-group'){
@@ -455,7 +457,7 @@ describe("Chat Server",function(){
 	   		user1.on('connect', function(data){
 	   			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
 	   				groupName = group;
-	   				user1.emit('add-to-group',{'group':groupName, 'numbers':testContacts});
+	   				user1.emit('add-to-group',{'group':groupName, 'members':testContacts});
 	   			});
 	   		});
 	   		user2.on('connect', function(data){
@@ -496,7 +498,7 @@ describe("Chat Server",function(){
 	      user1.on('connect', function(data){
 			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
 				groupName = group;
-				user1.emit('add-to-group',{'group':groupName, 'numbers':testContacts});
+				user1.emit('add-to-group',{'group':groupName, 'members':testContacts});
 			});
 	      });
 	      user2.on('connect', function(data){
