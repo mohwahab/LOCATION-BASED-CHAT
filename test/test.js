@@ -334,6 +334,7 @@ describe("Chat Server",function(){
 		     	     	     	} else {
 		     	     	     		retrievedUser3 = retrievedUser;
 		     	     	     		user1 = io.connect(svrUrl, options);
+		     	     	     		user1.number = testUser;
 		     	     	     	    user2 = io.connect(svrUrl, options);
 		     	     	     	    user2.number = testContacts[0];
 		     	     	     	    user3 = io.connect(svrUrl, options);
@@ -366,36 +367,50 @@ describe("Chat Server",function(){
 	    		user2.on('message', function(msg){
 	    			user2.emit('message', {to:testUser, txt:'Hello Ahmed :)'});
 	    		});
-		});
+		  });
 		
 		
 		  it('Should be able to add members to group', function(done){
-			  this.timeout(600000);  
-			  var groupName = null;
-			  var checkNotification = function(user){
-	        	user.on('notification', function(notification){
-	        		notification.event.should.equal("add-to-group");
-	     			notification.group.should.equal(groupName);
+				this.timeout(600000);  
+				var groupName = null;
+		 		user1.on('connect', function(data){
+		 			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
+		 				groupName = group;
+		 				user1.emit('add-to-group',{'group':groupName, 'members':testContacts});
+		 				//user1.disconnect();
+		 				disconnetUser(user1, done);
+		 			});     	     
+		 		});
+		 		user2.on('connect', function(data){
+		 			user2.emit('register',{id:retrievedUser2._id}, registerCallback);
+		 			//checkNotification(user2);
+		 		});
+		 		user2.on('notification', function(notification){
+		 			//console.log("****************** [USER 2("+user2.number+") NOTIFICATION]: "+JSON.stringify(notification));
+	        		if(notification.event === "add-to-group"){        			
+	        			notification.group.should.equal(groupName);
+	         			notification.by.should.equal(user1.number);
+	        			notification.members.should.include(user1.number);
+	        		}else if(notification.event === "new-member"){        			
+	        			notification.group.should.equal(groupName);
+	         			notification.by.should.equal(user1.number);
+	         			notification.member.should.equal(user3.number);
+	         			disconnetUser(user2, done);
+	        		}     			
+	        	});
+		 		user3.on('connect', function(data){
+		 			user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
+		 			//checkNotification(user3);
+		 		});
+		 		user3.on('notification', function(notification){
+		 			//console.log("****************** [USER 3("+user3.number+") NOTIFICATION]: "+JSON.stringify(notification));
+	        		notification.event.should.equal("add-to-group");        		
+	    			notification.group.should.equal(groupName);
 	     			notification.by.should.equal(testUser);
-	     			disconnetUser(user, done);
-	          });
-	        };
-	 		user1.on('connect', function(data){
-	 			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
-	 				groupName = group;
-	 				user1.emit('add-to-group',{'group':groupName, 'members':testContacts}); //TODO change "numbers" to "contacts" or "members"
-	 				//user1.disconnect();
-	 				disconnetUser(user1, done);
-	 			});     	     
-	 		});
-	 		user2.on('connect', function(data){
-	 			user2.emit('register',{id:retrievedUser2._id}, registerCallback);
-	 			checkNotification(user2);
-	 		});
-	 		user3.on('connect', function(data){
-	 			user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
-	 			checkNotification(user3);
-	 		});
+	    			notification.members.should.include(user1.number);
+	    			notification.members.should.include(user2.number);
+	    			disconnetUser(user3, done);     			
+	        	});
 			  
 		});
 		  	  
@@ -418,7 +433,7 @@ describe("Chat Server",function(){
 	   		});
 	   		user2.on('notification', function(notification){
 	      		if(notification.event === 'add-to-group'){
-	      			user2.emit('leave-group',{name:groupName});
+	      			user2.emit('leave-group',{group:groupName});
 	      			disconnetUser(user2, done);
 	      		}
 	   		});
@@ -448,10 +463,14 @@ describe("Chat Server",function(){
 	      				disconnetUser(user1, done);
 	      			}
 	      		}else if(notification.event === 'remove-from-group'){
-	      			notification.event.should.equal("remove-from-group");
+	      				//notification.event.should.equal("remove-from-group");
 		     			notification.group.should.equal(groupName);
 		     			notification.by.should.equal(testUser);
 		     			disconnetUser(user, done);
+	      		}else if(notification.event === 'remove-member'){
+	      			notification.group.should.equal(groupName);
+	     			notification.by.should.equal(testUser);
+	     			notification.member.should.equal(user2.number);
 	      		}
 	   	    };
 	   		user1.on('connect', function(data){

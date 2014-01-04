@@ -222,7 +222,9 @@ io.sockets.on('connection', function (socket) {
 				userSocket = socketDB.getOrCreate(result.number, socket);
 				userSocket.group = groupName;
 				userSocket.join(groupName);
-				groups.add(groupName, new Group(groupName,userSocket.phone));
+				var newGroup = new Group(groupName,userSocket.phone);
+				newGroup.add(result.number);
+				groups.add(groupName, newGroup);
 		      	callback(groupName);
 			}
 	  });
@@ -230,51 +232,67 @@ io.sockets.on('connection', function (socket) {
   
   socket.on('add-to-group', function(data){
 	    log.debug("ADD TO GROUP: ["+data.members+"]");
+	    var members = null;
 	    var userSocket = null;
-	    data.members.forEach(function(member){
-	    	userSocket = socketDB.get(member);	    	
-	    	io.sockets.clients(data.group).forEach(function(grpUsrSocket){
-	    		console.log("************ [GROUP MEMBERS]: "+grpUsrSocket.phone+" ******************");
-	    	});
-	    	var notification = {event:"add-to-group",group:data.group,by:socket.phone};
-	    	log.debug("ADD TO GROUP USER NOTIFICATION EVENT: ["+notification.event+"]");
-    		log.debug("ADD TO GROUP USER NOTIFICATION GROUP: ["+notification.group+"]");
-    		log.debug("ADD TO GROUP USER NOTIFICATION BY: ["+notification.by+"]");
-	    	if(userSocket){
-	    		log.debug("ADD TO GROUP USER: '"+member+"' ADDED");
-	    		userSocket.group = data.group;
-	    		userSocket.join(data.group);
-	    		userSocket.emit('notification',notification);
-	    	}else{
-	    		log.debug("ADD TO GROUP USER: '"+member+"' NOT REGISTERED");
-	    		//var userGroups = groupDB.get(result.number);
-	    		groupDB.add(member,notification);
-	    	}
-		});
+	    var notification = null;
+	    var group = groups.get(data.group);
+	    if(group){
+	    	data.members.forEach(function(member){
+		    	notification = {event:"new-member",group:data.group,by:socket.phone,member:member};
+		    	socket.broadcast.to(data.group).emit('notification', notification);
+		    	userSocket = socketDB.get(member);
+		    	members = group.getMembers().slice(0);
+		    	notification = {event:"add-to-group",group:data.group,by:socket.phone,members:members};
+		    	log.debug("ADD TO GROUP USER NOTIFICATION EVENT: ["+notification.event+"]");
+	    		log.debug("ADD TO GROUP USER NOTIFICATION GROUP: ["+notification.group+"]");
+	    		log.debug("ADD TO GROUP USER NOTIFICATION BY: ["+notification.by+"]");
+	    		log.debug("ADD TO GROUP USER NOTIFICATION MEMBERS: ["+notification.members+"]");
+	    		group.add(member);
+		    	if(userSocket){
+		    		log.debug("ADD TO GROUP USER: '"+member+"' ADDED");
+		    		userSocket.group = data.group;
+		    		userSocket.join(data.group);
+		    		userSocket.emit('notification',notification);
+		    	}else{
+		    		log.debug("ADD TO GROUP USER: '"+member+"' NOT REGISTERED");
+		    		//var userGroups = groupDB.get(result.number);
+		    		groupDB.add(member,notification);
+		    	}
+			});
+	    }
   });
   
   
   socket.on('remove-from-group', function(data){
 	    log.debug("REMOVE FROM GROUP: ["+data.members+"]");
 	    var userSocket = null;
-	    data.members.forEach(function(member){
-	    	userSocket = socketDB.get(member);
-	    	var notification = {event:"remove-from-group",group:data.group,by:socket.phone};
-	    	log.debug("REMOVE FROM GROUP USER NOTIFICATION EVENT: ["+notification.event+"]");
-    		log.debug("REMOVE FROM GROUP USER NOTIFICATION GROUP: ["+notification.group+"]");
-    		log.debug("REMOVE FROM GROUP USER NOTIFICATION BY: ["+notification.by+"]");
-	    	if(userSocket && groups.isGroupOwner(socket.phone,data.group)){
-	    		//userSocket.group = null;
-	    		userSocket.emit('notification',notification);
-	    		userSocket.leave(data.group);
-	    	}
-		});
+	    var notification = null;
+	    var group = groups.get(data.group);
+	    if(group){
+	    	data.members.forEach(function(member){
+		    	userSocket = socketDB.get(member);
+		    	var notification = {event:"remove-from-group",group:data.group,by:socket.phone};
+		    	log.debug("REMOVE FROM GROUP USER NOTIFICATION EVENT: ["+notification.event+"]");
+	    		log.debug("REMOVE FROM GROUP USER NOTIFICATION GROUP: ["+notification.group+"]");
+	    		log.debug("REMOVE FROM GROUP USER NOTIFICATION BY: ["+notification.by+"]");
+		    	if(userSocket && groups.isGroupOwner(socket.phone,data.group)){
+		    		//userSocket.group = null;
+		    		userSocket.emit('notification',notification);
+		    		userSocket.leave(data.group);
+		    		group.remove(userSocket.phone);
+		    	}
+		    	notification = {event:"remove-member",group:data.group,by:socket.phone,member:member};
+		    	socket.broadcast.to(data.group).emit('notification', notification);
+			});
+	    }	    
   });
  
-  socket.on('leave-group', function(group){
-	  var notification = {event:"leave-group",group:group.name,by:socket.phone}
+  socket.on('leave-group', function(data){
+	  var group = groups.get(data.group);
+	  var notification = {event:"leave-group",group:data.group,by:socket.phone}
 	  socket.broadcast.to(group.name).emit('notification', notification);
 	  socket.leave(group.name);
+	  group.remove(socket.phone);
   }); 
   
 });

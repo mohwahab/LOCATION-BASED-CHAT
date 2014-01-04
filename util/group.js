@@ -4,33 +4,28 @@ function Group(name, owner) {
   this.members = [];
 };
 
-//Room.prototype.addPerson = function(personID) {
-//  if (this.status === "available") {
-//    this.people.push(personID);
-//  }
-//};
-//
-//Room.prototype.removePerson = function(person) {
-//  var personIndex = -1;
-//  for(var i = 0; i < this.people.length; i++){
-//    if(this.people[i].id === person.id){
-//      playerIndex = i;
-//      break;
-//    }
-//  }
-//  this.people.remove(personIndex);
-//};
-//
-//Group.prototype.getMember = function(id) {
-//  var member = null;
-//  for(var i = 0; i < this.members.length; i++) {
-//    if(this.members[i] == id) {
-//    	member = this.members[i];
-//      break;
-//    }
-//  }
-//  return member;
-//};
+Group.prototype.add = function(phoneNmber) {
+  //if (this.status === "available") {
+    this.members.push(phoneNmber);
+  //}
+};
+
+Group.prototype.remove = function(phoneNmber) {
+  var memberIndex = -1;
+  var memberIndex = this.members.indexOf(phoneNmber);
+  if (memberIndex > -1) {
+	  this.members.splice(memberIndex, 1);
+  }
+};
+
+Group.prototype.get = function(phoneNmber) {
+  var memberIndex = this.members.indexOf(phoneNmber);
+  return this.members[memberIndex];
+};
+
+Group.prototype.getMembers = function() {
+	return this.members;
+};
 
 //Room.prototype.isAvailable = function() {
 //  if (this.available === "available") {
