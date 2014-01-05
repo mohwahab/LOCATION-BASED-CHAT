@@ -160,6 +160,7 @@ io.sockets.on('connection', function (socket) {
 	         		socketDB.add(result.number,socket);
 	         		//userMap[socket.id] = result.number;
 	         		socket.phone = result.number;
+	         		socket.userId = user.id;
 	         		var userMessages = messageDB.get(result.number);
 	         		if(userMessages){
 	         			userMessages.forEach(function(msg){
@@ -206,6 +207,13 @@ io.sockets.on('connection', function (socket) {
   socket.on('disconnect', function(){
 	    log.debug('\n[ -------------- CLIENT (DIS)CONNECTED ('+socket.id+') ----------- ]');
 	    //groups.removeGroups(socket.phone);
+	    User.hideLocation(socket.userId, function(error){
+			if(error) {
+				log.error("ERROR hide: "+error);	
+	        }else{
+	        	log.debug("User ["+socket.phone+"] is Hidden");
+	        }
+		});
 	    delete socketDB.remove(socket.phone);
 	    //delete userMap[socket.id];
   });
@@ -219,6 +227,7 @@ io.sockets.on('connection', function (socket) {
 			  	log.debug("NEW GROUP CREATOR: '"+result.number+"'");
 				log.debug("NEW GROUP CREATED: '"+groupName+"'");
 				socket.phone = result.number;
+				socket.userId = user.id;
 				userSocket = socketDB.getOrCreate(result.number, socket);
 				userSocket.group = groupName;
 				userSocket.join(groupName);
