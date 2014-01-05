@@ -134,7 +134,7 @@ app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
 	    	 //TODO Notify friends in region with his location 
 	    	 var userSocket = null;
 	    	 var notification = {event:"near-by",contact:user.number,loc:[req.params.long,req.params.lat]};	
-	    	 //console.log("**************** [NOTIFICATION]: "+JSON.stringify(notification)+" ****************");
+	    	 log.debug("**************** [NOTIFICATION]: "+JSON.stringify(notification)+" ****************");
 	    	 user.contacts.forEach(function(contact){	    		 
 	    		 userSocket = socketDB.get(contact.number);
 	    		 if(userSocket){	    			 
@@ -289,7 +289,7 @@ io.sockets.on('connection', function (socket) {
  
   socket.on('leave-group', function(data){
 	  var group = groups.get(data.group);
-	  var notification = {event:"leave-group",group:data.group,by:socket.phone}
+	  var notification = {event:"leave-group",group:data.group,by:socket.phone}; //TODO "by" to be "member"
 	  socket.broadcast.to(group.name).emit('notification', notification);
 	  socket.leave(group.name);
 	  group.remove(socket.phone);

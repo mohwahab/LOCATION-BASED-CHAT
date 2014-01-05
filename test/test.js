@@ -86,7 +86,7 @@ afterEach(function(done){
    });  
 });		
 
-describe('User', function(){
+describe('User Location', function(){
 			
     it("Should be able to return nearby friends  ", function(done){
     	this.timeout(600000);
