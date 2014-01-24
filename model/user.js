@@ -37,6 +37,7 @@ var User = function(){
 	};
 	
 	var _hideLocation = function(id,callback){
+		log.debug("HIDE LOCATION[id]: "+id);
 		_model.update({_id: id},{visible: false},callback);
 	};
 	
@@ -48,6 +49,7 @@ var User = function(){
 //	                });
 //	}
 	   var _add = function(name, number, long, lat, contacts, callback){
+		   log.debug("[name]: "+name+" [number]: "+number+" [long]: "+long+" [lat]: "+lat+" [contacts]: "+contacts);
 		   _model.create({ name: name, number: number, loc: { type: 'Point', coordinates: [parseFloat(long),parseFloat(lat)] }},function(error,newUser){
 				if(error) {
 					log.error("ERROR register: "+error);
@@ -101,15 +103,15 @@ var User = function(){
 //	   };
 	   
 	   
-	   var _findNearContacts = function(id, long, lat, dist, callback){
+	   var _findNearContacts = function(id, long, lat, dist, visible, callback){
 		    _model.findById(id, function(error, retrievedUser) {
 		    	if(error) {
 			    	 console.log("\nHERE:  _findNearContacts: (ERROR)> "+error);
-			     }else{
+			     }else if(retrievedUser){
 			    	 retrievedUser.loc.coordinates = [parseFloat(long), parseFloat(lat)];
 //			    	 TODO Uncomment
 //			    	 retrievedUser.online = true;
-			    	 retrievedUser.visible = true;
+			    	 retrievedUser.visible = visible;
 			    	 retrievedUser.save();
 			    	 var distance = dist * 1000;
 			    	 log.debug("[ NEAR CONTACTS:: Long: "+long+"  Lat: "+lat+"  Dist: "+distance+" ]");
@@ -140,7 +142,18 @@ var User = function(){
          		callback({number : retrievedUser.number});
          	}
 		  });
-};
+	   };
+	   
+	   var _getLastCheckInLoc = function(id, callback){
+		   _model.findById(id, function(error, retrievedUser) {
+	      	if(error) {
+	      		callback({error : error});
+         	} else if(retrievedUser) {
+         		console.log("[getLastCheckInLoc]: "+JSON.stringify(retrievedUser));
+         		callback({long : retrievedUser.loc.coordinates[0], lat : retrievedUser.loc.coordinates[1]});
+         	}
+		  });
+	   };
 	   
 //	   var _addUserSocket = function(id, socketId, callback){
 //		   _model.findById(user.id, function(error, user) {
@@ -159,6 +172,7 @@ var User = function(){
 	    showLocation: _showLocation,
 	    hideLocation: _hideLocation,
 	    getNumber: _getNumber,
+	    getLastCheckInLoc: _getLastCheckInLoc,
 	    //findContacts: _findContacts,
 	    findNearContacts: _findNearContacts//,
 	    //updateContacts: _updateContacts

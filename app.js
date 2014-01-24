@@ -19,6 +19,8 @@ var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
 var uuid = require('node-uuid');
 
+var defaultDist = 10; //default nearby search distance.
+
 //io.configure('development', function(){
 //    io.set('transports', ['xhr-polling']);
 //});
@@ -86,6 +88,28 @@ if ('development' == app.get('env')) {
   app.use(express.errorHandler());
 }
 
+
+var notifyNearBy = function(user, event, callback){
+	User.findNearContacts(user.id, user.long, user.lat, user.dist, user.visible, function(error, result){
+	     if(error) {
+	    	 callback({ error : error});
+	     }else{	    	  
+	    	 var userSocket = null;
+	    	 var notification = {event:event,contact:result.number,loc:[user.long,user.lat]};	
+	    	 log.debug("**************** [NOTIFICATION]: "+JSON.stringify(notification)+" ****************");
+	    	 log.debug("**************** [CONTACTS]: "+result.contacts+" ****************");
+	    	 result.contacts.forEach(function(contact){	    		 
+	    		 userSocket = socketDB.get(contact.number);
+	    		 if(userSocket){	    			 
+	    			 userSocket.emit('notification',notification);
+	    		 }
+	    	 });
+	    	 callback({contacts : result.contacts});
+	     }
+	 });
+};
+
+
 app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 	log.info("[ "+req.method+" /register/"+req.params.name+"/"+req.params.number+"/"+req.params.long+"/"+req.params.lat+"/"+req.params.contacts+" ]");
 	User.register(req.params.name, req.params.number, req.params.long, req.params.lat, req.params.contacts, function(result){
@@ -125,25 +149,34 @@ app.post('/show/:id', function(req, res) {
 
 app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
 	log.info("[ "+req.method+" /near/"+req.params.id+"/"+req.params.long+"/"+req.params.lat+"/"+req.params.dist+" ]");
-	User.findNearContacts(req.params.id, req.params.long, req.params.lat, req.params.dist, function(error, user){
-	     if(error) {
-	    	 log.error("ERROR: "+error);
+	req.params.visible = true;
+	notifyNearBy(req.params, "near-by", function(result){
+		if(result.error) {
+	    	 log.error("ERROR: "+result.error);
 	    	 res.json(500, { error: result.error });
 	     }else{
-	    	 //console.log("NEAR CONTACTS: "+nearContacts+"\n\n");
-	    	 //TODO Notify friends in region with his location 
-	    	 var userSocket = null;
-	    	 var notification = {event:"near-by",contact:user.number,loc:[req.params.long,req.params.lat]};	
-	    	 log.debug("**************** [NOTIFICATION]: "+JSON.stringify(notification)+" ****************");
-	    	 user.contacts.forEach(function(contact){	    		 
-	    		 userSocket = socketDB.get(contact.number);
-	    		 if(userSocket){	    			 
-	    			 userSocket.emit('notification',notification);
-	    		 }
-	    	 });
-	    	 res.json({contacts : user.contacts});
+	    	 res.json({contacts : result.contacts});
 	     }
-	 });
+	});
+//	User.findNearContacts(req.params.id, req.params.long, req.params.lat, req.params.dist, function(error, user){
+//	     if(error) {
+//	    	 log.error("ERROR: "+error);
+//	    	 res.json(500, { error: result.error });
+//	     }else{
+//	    	 //console.log("NEAR CONTACTS: "+nearContacts+"\n\n");
+//	    	 //TODO Notify friends in region with his location 
+//	    	 var userSocket = null;
+//	    	 var notification = {event:"near-by",contact:user.number,loc:[req.params.long,req.params.lat]};	
+//	    	 log.debug("**************** [NOTIFICATION]: "+JSON.stringify(notification)+" ****************");
+//	    	 user.contacts.forEach(function(contact){	    		 
+//	    		 userSocket = socketDB.get(contact.number);
+//	    		 if(userSocket){	    			 
+//	    			 userSocket.emit('notification',notification);
+//	    		 }
+//	    	 });
+//	    	 res.json({contacts : user.contacts});
+//	     }
+//	 });
 });
 
 io.sockets.on('connection', function (socket) {
@@ -161,6 +194,7 @@ io.sockets.on('connection', function (socket) {
 	         		//userMap[socket.id] = result.number;
 	         		socket.phone = result.number;
 	         		socket.userId = user.id;
+	         		log.debug('Socket of User('+socket.phone+') Is set value('+socket.userId+')');
 	         		var userMessages = messageDB.get(result.number);
 	         		if(userMessages){
 	         			userMessages.forEach(function(msg){
@@ -206,16 +240,39 @@ io.sockets.on('connection', function (socket) {
   
   socket.on('disconnect', function(){
 	    log.debug('\n[ -------------- CLIENT (DIS)CONNECTED ('+socket.id+') ----------- ]');
-	    //groups.removeGroups(socket.phone);
-	    User.hideLocation(socket.userId, function(error){
-			if(error) {
-				log.error("ERROR hide: "+error);	
-	        }else{
-	        	log.debug("User ["+socket.phone+"] is Hidden");
-	        }
-		});
+	    var id = socket.userId;
+	    log.debug('Socket User Id -->('+id+')');
+	    log.debug("User ["+socket.phone+"] is Hidden");
+    	User.getLastCheckInLoc(id, function(result){
+    		if(result.error){
+    			log.error("DISCONNECT ERROR: "+result.error);
+    		}else{
+    			notifyNearBy({id:id, long:result.long, lat:result.lat, dist:defaultDist, visible:false}, "off-line", function(result){
+	        		if(result.error) {
+	        	    	 log.error("NOTIFY NEARBY ERROR: "+result.error);	        	    	 
+	        	    }
+	        	});
+    		}
+    	});
+//	    User.hideLocation(id, function(error){
+//			if(error) {
+//				log.error("ERROR hide: "+error);	
+//	        }else{
+//	        	log.debug("User ["+socket.phone+"] is Hidden");
+//	        	User.getLastCheckInLoc(id, function(result){
+//	        		if(result.error){
+//	        			log.error("DISCONNECT ERROR: "+result.error);
+//	        		}else{
+//	        			notifyNearBy({id:id, long:result.long, lat:result.lat, dist:defaultDist}, "off-line", function(result){
+//	    	        		if(result.error) {
+//	    	        	    	 log.error("NOTIFY NEARBY ERROR: "+result.error);	        	    	 
+//	    	        	    }
+//	    	        	});
+//	        		}
+//	        	});
+//	        }
+//		});
 	    delete socketDB.remove(socket.phone);
-	    //delete userMap[socket.id];
   });
   
   socket.on('create-group', function(user,callback){

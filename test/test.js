@@ -57,7 +57,7 @@ beforeEach(function(done){
 		             	{ name: 'Ahmed Alaa', number: '01001252010', loc: { type: 'Point', coordinates:[ parseFloat(31.102711), parseFloat(30.018571)] }}, 	//In contacts & near 
 		             	{ name: 'Karim Fahmy', number: '01208993983', loc: { type: 'Point', coordinates: [ parseFloat(31.027054), parseFloat(30.073254)] }},	//In contacts & near
 		             	{ name: 'Abdullah zaki', number: '01108993983', loc: { type: 'Point', coordinates: [ parseFloat(32.099865), parseFloat(30.121395)] }},	//In contacts & Far
-		             	{ name: 'Sarah Ahmed', number: '01008993983', loc: { type: 'Point', coordinates: [ parseFloat(48.89364), parseFloat(2.33739)] }}		//Out of contacts
+		             	{ name: 'Sarah Ahmed', number: '01008993983', loc: { type: 'Point', coordinates: [ parseFloat(32.099865), parseFloat(30.121395)] }}		//Out of contacts
 		            ];
 		async.forEach(Users , function (user, done){ 
 			User.model.create(user,function(error,newUser){
@@ -87,7 +87,18 @@ afterEach(function(done){
 });		
 
 describe('User Location', function(){
-			
+	 
+//	it("Should be able to return error 500 as nearby response if user doesn't exist ", function(done){
+//		var fakeId = "-1";
+//		var userLoc = [31.102711,30.018571]; // [long,lat]
+//		request
+//        .get(svrUrl+'/near/'+fakeId+'/'+userLoc[0]+'/'+userLoc[1]+'/10?')
+//        .end(function(res){
+//            res.should.be.json;
+//            res.statusCode.should.equal(500);					    
+//        });
+//	});
+	
     it("Should be able to return nearby friends  ", function(done){
     	this.timeout(600000);
     	var testUserId = null;
@@ -149,6 +160,7 @@ describe('User Location', function(){
 	     	     	        };
 	     	     	        var checkNotification = function(contact){
 	     	     	        	contact.on("notification",function(notification){
+	     	     	        		console.log(">>>>>>>>>>>>>>>>>>>> [NOTIFICATION]: "+JSON.stringify(notification));
 	     	     	        		notification.event.should.equal("near-by");
 	     	     	     			notification.contact.should.equal(testUserNumber);
 	     	     	     			notification.loc.should.include(userLoc[0].toString());
@@ -169,7 +181,7 @@ describe('User Location', function(){
     it("Should be able to register a new user", function(done){
         //this.timeout(100000);
         request
-            .get(svrUrl+'/register/Abd El Wahab Mohamed/01001953010/31.099865/30.021395/["01001252010","01208993983","01108993983"]?')
+            .get(svrUrl+'/register/Abd El Wahab Mohamed/01001953010/31.099865/30.021395/["01001252010","01208993983","01108993983"]')
             .end(function(res){
                 res.should.be.json;
                 User.model.findById(res.body.id, function(error, newUser) {
@@ -227,7 +239,7 @@ describe('User Location', function(){
     it("Should be able to return the id of registered user", function(done){
         //this.timeout(100000);
         request
-            .get(svrUrl+'/register/Ahmed Alaa/01001252010/32.099865/30.121395/["01001252010","01208993983","01108993983"]?')
+            .get(svrUrl+'/register/Ahmed Alaa/01001252010/32.099865/30.121395/["01001252010","01208993983","01108993983"]')
             .end(function(res){
                 res.should.be.json;
                 res.body.id.should.equal(testUsers['01001252010'].toString());
@@ -274,6 +286,7 @@ describe('User Location', function(){
 });
 
 describe("Chat Server",function(){  
+
   it('Should be able to create group chat', function(done){
 	  User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
 	  		if(error) {
@@ -294,6 +307,28 @@ describe("Chat Server",function(){
 	  });
   });
   
+  it('Should be able to update user status to offline on discinnect', function(done){
+	  User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
+	  		if(error) {
+			    console.log("\nGET CHAT USER ERROR: "+error);
+	     	} else {
+	     		var user = io.connect(svrUrl, options);
+	     		var id = {id:retrievedUser._id};
+	     		user.on('connect', function(data){
+	     			  user.disconnect();
+	     			 User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
+	     		  		if(error) {
+	     		  			console.log("\nGET CHAT USER ERROR: "+error);
+	     		  		} else {
+	     		  			retrievedUser.visible.should.equal(false);	     		  			
+	     		  		}
+	     		  		done();
+	     		  	});	     	
+	     		});
+	     	}
+	  });
+  });
+  
   describe("Group Chat",function(){
 		
 		var user1;
@@ -303,7 +338,7 @@ describe("Chat Server",function(){
 		var retrievedUser2;
 		var retrievedUser3;
 		var testUser = '01001252010';
-		var testContacts = ['01008993983','01108993983'];
+		var testContacts = ["01008993983","01108993983"];
 		
 		var registerCallback = function(){};
 		
@@ -333,20 +368,26 @@ describe("Chat Server",function(){
 		     	     			    console.log("\nGET CHAT USER ERROR: "+error);
 		     	     	     	} else {
 		     	     	     		retrievedUser3 = retrievedUser;
+		     	     	     		console.log("\nretrievedUser1._id: "+retrievedUser1._id);
+		     	     	     		console.log("\nretrievedUser2._id: "+retrievedUser2._id);
+		     	     	     		console.log("\nretrievedUser3._id: "+retrievedUser3._id);
+		     	     	     		
 		     	     	     		user1 = io.connect(svrUrl, options);
 		     	     	     		user1.number = testUser;
+		     	     	     				     	     	     		
 		     	     	     	    user2 = io.connect(svrUrl, options);
-		     	     	     	    user2.number = testContacts[0];
+		     	     	     	    user2.number = testContacts[0];	
+		     	     	     	    
 		     	     	     	    user3 = io.connect(svrUrl, options);
 		     	     	     	    user3.number = testContacts[1];
 		     	     	     	    done();
-		     	     	     	}
+		     	     	     	}		     	     	  		
 		     	     	  	});
 		     	     	}
 		     	  	});
 		     	}
 		  	  });
-
+			  //done();
 		});
 		
 		it('Should be able to receive and forward messages', function(done){
@@ -536,6 +577,55 @@ describe("Chat Server",function(){
 	      });
 
 	  });
+	  
+	  it('Should be able to notify nearby friends on user departure', function(done){
+		  var newUser = '01101252010';
+		  var testUserLoc = [32.099865,30.121395];
+		  request
+          .get(svrUrl+'/register/Test User/'+newUser+'/'+testUserLoc[0]+'/'+testUserLoc[1]+'/["'+testContacts[0]+'","'+testContacts[1]+'"]')
+          .end(function(res){
+        	    var user0 = io.connect(svrUrl, options);
+	     		user0.number = newUser;
+	     		
+        	  	user0.on('connect', function(data){
+        	  		user0.emit('register',{id:res.body.id}, function(){
+        	  			disconnetUser(user0, done);
+        	  		});   	   	    		
+	  	   	    });
+        	  	
+        	  	user1.on('connect', function(data){
+        	  		user1.disconnect();
+	  	   	    });
+        	  	
+	  	   	    user2.on('connect', function(data){
+	  	   	    	user2.emit('register',{id:retrievedUser2._id}, registerCallback); 
+	  	   	    });
+	  	   	    
+	  	   	    user2.on('notification', function(notification){
+	  				checkNotification(user2,user0.number,testUserLoc[0],testUserLoc[1],notification);
+	  		    });
+	  	   	    
+	  	   	    user3.disconnect();
+	  	   	    user3 = io.connect(svrUrl, options);
+	     	    user3.number = testContacts[1];
+	  	   	    user3.on('connect', function(data){	  	   	    	
+	  	   	    	user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
+	  	   	    });
+	  	   	    
+	  	   	    user3.on('notification', function(notification){	  	   	    	
+	  				checkNotification(user3,user0.number,testUserLoc[0],testUserLoc[1],notification);
+	  		    });
+          });
+		  
+		  var checkNotification = function(user,number,long,lat,notification){			 
+				notification.event.should.equal("off-line");
+	   			notification.contact.should.equal(number);
+	   			notification.loc.should.include(long);
+	   			notification.loc.should.include(lat);
+	   			disconnetUser(user, done);
+	   	    };
+	  });
+	  
 	});
   
 });
