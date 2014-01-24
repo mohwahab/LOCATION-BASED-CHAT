@@ -87,17 +87,51 @@ afterEach(function(done){
 });		
 
 describe('User Location', function(){
-	 
-//	it("Should be able to return error 500 as nearby response if user doesn't exist ", function(done){
-//		var fakeId = "-1";
-//		var userLoc = [31.102711,30.018571]; // [long,lat]
-//		request
-//        .get(svrUrl+'/near/'+fakeId+'/'+userLoc[0]+'/'+userLoc[1]+'/10?')
-//        .end(function(res){
-//            res.should.be.json;
-//            res.statusCode.should.equal(500);					    
-//        });
-//	});
+	
+	it("Should be able to return error 500 as nearby response if location is invalid", function(done){
+		var testNumber = '01001252010';
+		User.model.findOne({'number': testNumber},function(error,retrievedUser){
+        	if(error) {
+		         	console.log("GET RETRIEVED USER ERROR: "+error);
+	         	} else {	         	
+	        		var userLoc = ['null','null']; // [long,lat]
+	        		request
+	                .get(svrUrl+'/near/'+retrievedUser._id+'/'+userLoc[0]+'/'+userLoc[1]+'/10?')
+	                .end(function(res){	                	
+	                    res.should.be.json;
+	                    res.statusCode.should.equal(500);
+	                    res.body.error.should.equal("Invalid location coordinates");
+	                    done();
+	                });
+	         	}
+	        });		
+	});
+	
+	it("Should be able to return error 500 as nearby response if user doesn't exist", function(done){
+		var fakeId = "52e2cf49dbbcc4441f00003c";
+		var userLoc = [31.102711,30.018571]; // [long,lat]
+		request
+        .get(svrUrl+'/near/'+fakeId+'/'+userLoc[0]+'/'+userLoc[1]+'/10?')
+        .end(function(res){        	
+            res.should.be.json;
+            res.statusCode.should.equal(500);
+            res.body.error.should.equal("User doesn't exist");
+            done();
+        });
+	});
+	
+	it("Should be able to return error 500 as nearby response if user Id is invalid", function(done){
+		var fakeId = "-1";
+		var userLoc = [31.102711,30.018571]; // [long,lat]
+		request
+        .get(svrUrl+'/near/'+fakeId+'/'+userLoc[0]+'/'+userLoc[1]+'/10?')
+        .end(function(res){        	
+            res.should.be.json;
+            res.statusCode.should.equal(500);
+            res.body.error.message.should.equal("Cast to ObjectId failed for value \"-1\" at path \"_id\"");
+            done();
+        });
+	});
 	
     it("Should be able to return nearby friends  ", function(done){
     	this.timeout(600000);
@@ -286,7 +320,6 @@ describe('User Location', function(){
 });
 
 describe("Chat Server",function(){  
-
   it('Should be able to create group chat', function(done){
 	  User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
 	  		if(error) {

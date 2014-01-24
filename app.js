@@ -152,8 +152,8 @@ app.get('/near/:id/:long/:lat/:dist?', function(req, res) {
 	req.params.visible = true;
 	notifyNearBy(req.params, "near-by", function(result){
 		if(result.error) {
-	    	 log.error("ERROR: "+result.error);
-	    	 res.json(500, { error: result.error });
+	    	 log.error("ERROR: "+JSON.stringify(result.error));
+	    	 res.json(500, result.error);
 	     }else{
 	    	 res.json({contacts : result.contacts});
 	     }
