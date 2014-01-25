@@ -401,9 +401,6 @@ describe("Chat Server",function(){
 		     	     			    console.log("\nGET CHAT USER ERROR: "+error);
 		     	     	     	} else {
 		     	     	     		retrievedUser3 = retrievedUser;
-		     	     	     		console.log("\nretrievedUser1._id: "+retrievedUser1._id);
-		     	     	     		console.log("\nretrievedUser2._id: "+retrievedUser2._id);
-		     	     	     		console.log("\nretrievedUser3._id: "+retrievedUser3._id);
 		     	     	     		
 		     	     	     		user1 = io.connect(svrUrl, options);
 		     	     	     		user1.number = testUser;
@@ -412,7 +409,8 @@ describe("Chat Server",function(){
 		     	     	     	    user2.number = testContacts[0];	
 		     	     	     	    
 		     	     	     	    user3 = io.connect(svrUrl, options);
-		     	     	     	    user3.number = testContacts[1];
+		     	     	     	    user3.number = testContacts[1];		     	     	     	    		     	     	     	
+		     	     	     	   
 		     	     	     	    done();
 		     	     	     	}		     	     	  		
 		     	     	  	});
@@ -638,9 +636,9 @@ describe("Chat Server",function(){
 	  				checkNotification(user2,user0.number,testUserLoc[0],testUserLoc[1],notification);
 	  		    });
 	  	   	    
-//	  	   	    user3.disconnect();
-//	  	   	    user3 = io.connect(svrUrl, options);
-//	     	    user3.number = testContacts[1];
+	  	   	    user3.disconnect();
+	  	   	    user3 = io.connect(svrUrl, options);
+	     	    user3.number = testContacts[1];
 	  	   	    user3.on('connect', function(data){	  	   	    	
 	  	   	    	user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
 	  	   	    });
