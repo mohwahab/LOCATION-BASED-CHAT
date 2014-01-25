@@ -638,9 +638,9 @@ describe("Chat Server",function(){
 	  				checkNotification(user2,user0.number,testUserLoc[0],testUserLoc[1],notification);
 	  		    });
 	  	   	    
-	  	   	    user3.disconnect();
-	  	   	    user3 = io.connect(svrUrl, options);
-	     	    user3.number = testContacts[1];
+//	  	   	    user3.disconnect();
+//	  	   	    user3 = io.connect(svrUrl, options);
+//	     	    user3.number = testContacts[1];
 	  	   	    user3.on('connect', function(data){	  	   	    	
 	  	   	    	user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
 	  	   	    });
