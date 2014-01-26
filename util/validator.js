@@ -2,7 +2,8 @@ function Validator() {
 };
 
 Validator.prototype.isValidNumer = function(phoneNmber) {
-	return /^\d{11}$/.test(phoneNmber);
+	var regex = /^\+{0,1}\d{11}$/;
+	return regex.test(phoneNmber);
 };
 
 Validator.prototype.isValidUsername = function(username) {
