@@ -2,6 +2,8 @@
  * User model
  */
 var log = require('loglevel');
+var Validator = require('../util/validator.js');
+var validator = new Validator();
 
 var User = function(){  
 	var mongoose = require('mongoose');
@@ -78,19 +80,29 @@ var User = function(){
 	   };
 	   
 	   var _register = function(name, number, long, lat, contacts, callback){
-		   _model.findOne({number : number}, function(error,retrievedUser){
-			   log.debug("REGISTER(RETRIVED): RETRIVED_USER = "+retrievedUser);
-			   if(error){
-				   log.error("ERROR register: "+error);
-					callback({ error : error});
-			   }else if(retrievedUser){
-				   log.debug("REGISTER(EXISTS): id = "+retrievedUser._id);
-			       callback({id : retrievedUser._id});
-			   }else{
-				   log.debug("REGISTER(DOESNOT EXISTS): WILL ADD NEW USER");
-				   _add(name, number, long, lat, contacts, callback);
-			   }
-		   });
+		   if(!validator.isValidUsername(name)){
+			   var error = "Invalid Username";
+			   log.error("ERROR: "+error);
+			   callback({ error : error});
+		   }else if(!validator.isValidNumer(number)){
+			   var error = "Invalid phone number";
+			   log.error("ERROR: "+error);
+			   callback({ error : error});
+		   }else{
+			   _model.findOne({number : number}, function(error,retrievedUser){
+				   log.debug("REGISTER(RETRIVED): RETRIVED_USER = "+retrievedUser);
+				   if(error){
+					   log.error("ERROR register: "+error);
+						callback({ error : error});
+				   }else if(retrievedUser){
+					   log.debug("REGISTER(EXISTS): id = "+retrievedUser._id);
+				       callback({id : retrievedUser._id});
+				   }else{
+					   log.debug("REGISTER(DOESNOT EXISTS): WILL ADD NEW USER");
+					   _add(name, number, long, lat, contacts, callback);
+				   }
+			   });
+		   }		   
 	   };
 	   
 //	   var _findContacts = function(user, contacts, callback){
@@ -112,7 +124,7 @@ var User = function(){
 			    	 //log.debug(">>>>>>>>>>>>>>>>>>>>>>>>>> [long]: "+long+" [lat]: "+lat);
 			    	 //var long = parseFloat(long);
 			    	 //var lat = parseFloat(lat);
-			    	 log.debug(">>>>>>>>>>>>>>>>>>>>>>>>>> [long]: "+long+" [lat]: "+lat);
+			    	 //log.debug(">>>>>>>>>>>>>>>>>>>>>>>>>> [long]: "+long+" [lat]: "+lat);
 			    	 if(parseFloat(long) && parseFloat(lat)){
 			    		 retrievedUser.loc.coordinates = [parseFloat(long), parseFloat(lat)];
 //				    	 TODO Uncomment
@@ -162,7 +174,6 @@ var User = function(){
 	      	if(error) {
 	      		callback({error : error});
          	} else if(retrievedUser) {
-         		console.log("[getLastCheckInLoc]: "+JSON.stringify(retrievedUser));
          		callback({long : retrievedUser.loc.coordinates[0], lat : retrievedUser.loc.coordinates[1]});
          	}
 		  });

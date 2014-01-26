@@ -115,7 +115,7 @@ app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 	User.register(req.params.name, req.params.number, req.params.long, req.params.lat, req.params.contacts, function(result){
 		if(result.error) {
 			log.error("ERROR register: "+result.error);
-			res.json(500, { error: result.error });
+			res.json(500, result);
         } else {
         	res.json({id:result.id});
         }
@@ -249,7 +249,7 @@ io.sockets.on('connection', function (socket) {
     		}else{
     			notifyNearBy({id:id, long:result.long, lat:result.lat, dist:defaultDist, visible:false}, "off-line", function(result){
 	        		if(result.error) {
-	        	    	 log.error("NOTIFY NEARBY ERROR: "+result.error);	        	    	 
+	        	    	 log.error("NOTIFY NEARBY ERROR: "+JSON.stringify(result.error));	        	    	 
 	        	    }
 	        	});
     		}
