@@ -305,6 +305,18 @@ describe('User Location', function(){
             });
     });
     
+    it("Should be able to return error if username has invalid length", function(done){
+        //this.timeout(100000);
+        request
+            .get(svrUrl+'/register/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/01001252011/32.099865/30.121395/["01001252010","01208993983","01108993983"]')
+            .end(function(res){            	
+                res.should.be.json;
+                res.statusCode.should.equal(500);
+                res.body.error.should.equal("Invalid Username");
+                done();
+            });
+    });
+        
     it("Should be able to hide the user's location", function(done){
         //this.timeout(100000);
     	var id = testUsers['01001252010'];
