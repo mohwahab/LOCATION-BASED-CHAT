@@ -117,6 +117,9 @@ var User = function(){
 	   
 	   var _findNearContacts = function(id, long, lat, dist, visible, callback){
 		    _model.findById(id, function(error, retrievedUser) {
+		    	log.error("\n=============================="+id+"====================================");
+		    	log.error(">>>>>>>>>>>>>>>>>> RETRIVED USER: "+JSON.stringify(retrievedUser));
+		    	log.error("===============================================================================================\n");
 		    	if(error) {
 			    	 log.error("findNearContacts: (ERROR)> "+error);
 			    	 callback({error : error});
