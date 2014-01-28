@@ -91,13 +91,17 @@ if ('development' == app.get('env')) {
 
 var notifyNearBy = function(user, event, callback){
 	User.findNearContacts(user.id, user.long, user.lat, user.dist, user.visible, function(error, result){
-	     if(error) {
+	     if(error) {	    	 
 	    	 callback({ error : error});
-	     }else{	    	  
+	     }else{	    	  	    	 
 	    	 var userSocket = null;
 	    	 var notification = {event:event,contact:result.number,loc:[user.long,user.lat]};	
-	    	 log.debug("**************** [NOTIFICATION]: "+JSON.stringify(notification)+" ****************");
-	    	 log.debug("**************** [CONTACTS]: "+result.contacts+" ****************");
+	    	 log.debug("-------------------------------[NOTIFICATION]----------------------------------");
+	    	 log.debug(JSON.stringify(notification));
+	    	 log.debug("--------------------------------------------------------------------------------");
+	    	 log.debug("----------------------------------[CONTACTS]------------------------------------");
+	    	 log.debug(result.contacts);
+	    	 log.debug("--------------------------------------------------------------------------------");
 	    	 result.contacts.forEach(function(contact){	    		 
 	    		 userSocket = socketDB.get(contact.number);
 	    		 if(userSocket){	    			 
@@ -239,14 +243,14 @@ io.sockets.on('connection', function (socket) {
   });
   
   socket.on('disconnect', function(){
-	    log.debug('\n[ -------------- CLIENT (DIS)CONNECTED ('+socket.id+') ----------- ]');
+	    log.debug('\n[ -------------- CLIENT (DIS)CONNECTED ('+socket.id+') ----------- ]');	    
 	    var id = socket.userId;
 	    log.debug('Socket User Id -->('+id+')');
 	    log.debug("User ["+socket.phone+"] is Hidden");
-    	User.getLastCheckInLoc(id, function(result){
-    		if(result.error){
+    	User.getLastCheckInLoc(id, function(result){    		
+    		if(result.error){    			
     			log.error("DISCONNECT ERROR: "+result.error);
-    		}else{
+    		}else{    			
     			notifyNearBy({id:id, long:result.long, lat:result.lat, dist:defaultDist, visible:false}, "off-line", function(result){
 	        		if(result.error) {
 	        	    	 log.error("NOTIFY NEARBY ERROR: "+JSON.stringify(result.error));	        	    	 

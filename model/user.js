@@ -116,27 +116,18 @@ var User = function(){
 	   
 	   
 	   var _findNearContacts = function(id, long, lat, dist, visible, callback){
-		    _model.findById(id, function(error, retrievedUser) {
-		    	log.error("\n=============================="+id+"====================================");
-		    	log.error(">>>>>>>>>>>>>>>>>> RETRIVED USER: "+JSON.stringify(retrievedUser));
-		    	log.error("===============================================================================================\n");
+		    _model.findById(id, function(error, retrievedUser) {		  
 		    	if(error) {
 			    	 log.error("findNearContacts: (ERROR)> "+error);
 			    	 callback({error : error});
-			     }else if(retrievedUser){
-			    	 //log.debug(">>>>>>>>>>>>>>>>>>>>>>>>>> [long]: "+long+" [lat]: "+lat);
-			    	 //var long = parseFloat(long);
-			    	 //var lat = parseFloat(lat);
-			    	 //log.debug(">>>>>>>>>>>>>>>>>>>>>>>>>> [long]: "+long+" [lat]: "+lat);
+			     }else if(retrievedUser){			    	
 			    	 if(parseFloat(long) && parseFloat(lat)){
 			    		 retrievedUser.loc.coordinates = [parseFloat(long), parseFloat(lat)];
 //				    	 TODO Uncomment
 //				    	 retrievedUser.online = true;
-				    	 retrievedUser.visible = visible;
+				    	 retrievedUser.visible = visible;				    	
 				    	 retrievedUser.save();
-				    	 var distance = dist * 1000;
-				    	 log.debug("[ NEAR CONTACTS:: Long: "+long+"  Lat: "+lat+"  Dist: "+distance+" ]");
-				    	 log.debug("[ NEAR CONTACTS:: User:\n[ "+retrievedUser+" ]\n]");
+				    	 var distance = dist * 1000;				    	 				    	 				    	 
 				    	 _model.find( { _id: { $in : retrievedUser.contacts}, loc : { $near :
 	                     { $geometry :
 	                         { type : "Point" ,
@@ -145,7 +136,7 @@ var User = function(){
 				    	 },
 	                           $maxDistance : distance
 				    	 }
-				    	 , visible : {$exists:true}
+				    	 , visible : {$ne:false}
 				    	 }, 'number loc -_id', function(error,nearContacts){
 				    		 callback(error, {number: retrievedUser.number, contacts: nearContacts});
 				    	 });
@@ -172,11 +163,11 @@ var User = function(){
 		  });
 	   };
 	   
-	   var _getLastCheckInLoc = function(id, callback){
-		   _model.findById(id, function(error, retrievedUser) {
-	      	if(error) {
+	   var _getLastCheckInLoc = function(id, callback){		   
+		   _model.findById(id, function(error, retrievedUser) {			   
+	      	if(error) {	      		
 	      		callback({error : error});
-         	} else if(retrievedUser) {
+         	} else if(retrievedUser) {         		
          		callback({long : retrievedUser.loc.coordinates[0], lat : retrievedUser.loc.coordinates[1]});
          	}
 		  });

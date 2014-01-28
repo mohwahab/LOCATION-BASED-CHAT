@@ -65,6 +65,8 @@ beforeEach(function(done){
 			         console.log("\nADD USER ERROR: "+error);
 				} else {
 					//console.log("\nNEW USER ADDED: \n"+newUser+"\n");
+					newUser.visible = true;
+					newUser.save();
 					testUsers[newUser.number] = newUser._id;
 					done();
 				}
@@ -356,6 +358,7 @@ describe('User Location', function(){
 });
 
 describe("Chat Server",function(){  
+	
   it('Should be able to create group chat', function(done){
 	  User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
 	  		if(error) {
@@ -376,24 +379,29 @@ describe("Chat Server",function(){
 	  });
   });
   
-  it('Should be able to update user status to offline on discinnect', function(done){
-	  User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
-	  		if(error) {
+  it('Should be able to update user status to offline on disconnect', function(done){
+	  this.timeout(600000);	  
+	  User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 		  
+	  		if(error) {	  			
 			    console.log("\nGET CHAT USER ERROR: "+error);
-	     	} else {
+	     	} else {	     		
 	     		var user = io.connect(svrUrl, options);
 	     		var id = {id:retrievedUser._id};
-	     		user.on('connect', function(data){
-	     			  user.disconnect();
-	     			 User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
+	     		user.on('connect', function(data){	     			
+	     			user.emit('register',id, function(){	     				
+	     				user.disconnect();
+	     			});	     				     			 	     	
+	     		});
+	     		setTimeout(function(){
+	     			User.model.findOne({'number':'01008993983'},function(error,retrievedUser){      					
 	     		  		if(error) {
 	     		  			console.log("\nGET CHAT USER ERROR: "+error);
-	     		  		} else {
+	     		  		} else {	     		  			
 	     		  			retrievedUser.visible.should.equal(false);	     		  			
 	     		  		}
 	     		  		done();
-	     		  	});	     	
-	     		});
+	     		  	 });
+	     		}, 50);
 	     	}
 	  });
   });
