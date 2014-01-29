@@ -128,14 +128,29 @@ app.get('/register/:name/:number/:long/:lat/:contacts?', function(req, res) {
 
 app.post('/hide/:id', function(req, res) {
 	log.info("[ "+req.method+" /hide/"+req.params.id+" ]");
-	User.hideLocation(req.params.id, function(error){
-		if(error) {
-			log.error("ERROR hide: "+error);
-       	 	res.json(500, { error: error });
-        } else {
-        	res.send(200);
-        }
+	User.getLastCheckInLoc(req.params.id, function(result){    		
+		if(result.error){    			
+			log.error("HIDE ERROR: "+result.error);
+			res.json(500, result);
+		}else{    			
+			notifyNearBy({id:req.params.id, long:result.long, lat:result.lat, dist:defaultDist, visible:false}, "off-line", function(result){
+        		if(result.error) {
+        	    	 log.error("(HIDE) NOTIFY NEARBY ERROR: "+JSON.stringify(result.error));
+        	    	 res.json(500, result);
+        	    }else{
+        	    	res.send(200);
+        	    }
+        	});
+		}
 	});
+//	User.hideLocation(req.params.id, function(error){
+//		if(error) {
+//			log.error("ERROR hide: "+error);
+//       	 	res.json(500, { error: error });
+//        } else {
+//        	res.send(200);
+//        }
+//	});
 });
 
 app.post('/show/:id', function(req, res) {
