@@ -238,6 +238,7 @@ io.sockets.on('connection', function (socket) {
   
   socket.on('message', function(msg){
     if(msg.group){
+    	msg.from = socket.phone;
     	log.debug("GROUP MSG CHAT (GROUP): "+msg.group);
         log.debug("GROUP MSG CHAT (TXT): "+msg.txt);
         socket.broadcast.to(msg.group).emit('message', msg)

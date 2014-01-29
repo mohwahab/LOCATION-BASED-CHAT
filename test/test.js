@@ -626,7 +626,7 @@ describe("Chat Server",function(){
 	 	  };
 	      var checkMessage = function(user){
 	        	user.on('message', function(msg){
-	        		msg.should.eql({group:groupName, txt:message});
+	        		msg.should.eql({group:groupName, txt:message, from:user1.number});
 	        		disconnetUser(user, done);
 	        	});
 	      };
