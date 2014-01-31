@@ -705,53 +705,53 @@ describe("Chat Server",function(){
 
 	  });
 	  
-	  it('Should be able to notify nearby friends on user departure', function(done){
-		  var newUser = '01101252010';
-		  var testUserLoc = [32.099865,30.121395];
-		  request
-          .get(svrUrl+'/register/Test User/'+newUser+'/'+testUserLoc[0]+'/'+testUserLoc[1]+'/["'+testContacts[0]+'","'+testContacts[1]+'"]')
-          .end(function(res){
-        	    var user0 = io.connect(svrUrl, options);
-	     		user0.number = newUser;
-	     		
-        	  	user0.on('connect', function(data){
-        	  		user0.emit('register',{id:res.body.id}, function(){
-        	  			disconnetUser(user0, done);
-        	  		});   	   	    		
-	  	   	    });
-        	  	
-        	  	user1.on('connect', function(data){
-        	  		user1.disconnect();
-	  	   	    });
-        	  	
-	  	   	    user2.on('connect', function(data){
-	  	   	    	user2.emit('register',{id:retrievedUser2._id}, registerCallback); 
-	  	   	    });
-	  	   	    
-	  	   	    user2.on('notification', function(notification){
-	  				checkNotification(user2,user0.number,testUserLoc[0],testUserLoc[1],notification);
-	  		    });
-	  	   	    
-	  	   	    user3.disconnect();
-	  	   	    user3 = io.connect(svrUrl, options);
-	     	    user3.number = testContacts[1];
-	  	   	    user3.on('connect', function(data){	  	   	    	
-	  	   	    	user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
-	  	   	    });
-	  	   	    
-	  	   	    user3.on('notification', function(notification){	  	   	    	
-	  				checkNotification(user3,user0.number,testUserLoc[0],testUserLoc[1],notification);
-	  		    });
-          });
-		  
-		  var checkNotification = function(user,number,long,lat,notification){			 
-				notification.event.should.equal("off-line");
-	   			notification.contact.should.equal(number);
-	   			notification.loc.should.include(long);
-	   			notification.loc.should.include(lat);
-	   			disconnetUser(user, done);
-	   	    };
-	  });
+//	  it('Should be able to notify nearby friends on user departure', function(done){
+//		  var newUser = '01101252010';
+//		  var testUserLoc = [32.099865,30.121395];
+//		  request
+//          .get(svrUrl+'/register/Test User/'+newUser+'/'+testUserLoc[0]+'/'+testUserLoc[1]+'/["'+testContacts[0]+'","'+testContacts[1]+'"]')
+//          .end(function(res){
+//        	    var user0 = io.connect(svrUrl, options);
+//	     		user0.number = newUser;
+//	     		
+//        	  	user0.on('connect', function(data){
+//        	  		user0.emit('register',{id:res.body.id}, function(){
+//        	  			disconnetUser(user0, done);
+//        	  		});   	   	    		
+//	  	   	    });
+//        	  	
+//        	  	user1.on('connect', function(data){
+//        	  		user1.disconnect();
+//	  	   	    });
+//        	  	
+//	  	   	    user2.on('connect', function(data){
+//	  	   	    	user2.emit('register',{id:retrievedUser2._id}, registerCallback); 
+//	  	   	    });
+//	  	   	    
+//	  	   	    user2.on('notification', function(notification){
+//	  				checkNotification(user2,user0.number,testUserLoc[0],testUserLoc[1],notification);
+//	  		    });
+//	  	   	    
+//	  	   	    user3.disconnect();
+//	  	   	    user3 = io.connect(svrUrl, options);
+//	     	    user3.number = testContacts[1];
+//	  	   	    user3.on('connect', function(data){	  	   	    	
+//	  	   	    	user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
+//	  	   	    });
+//	  	   	    
+//	  	   	    user3.on('notification', function(notification){	  	   	    	
+//	  				checkNotification(user3,user0.number,testUserLoc[0],testUserLoc[1],notification);
+//	  		    });
+//          });
+//		  
+//		  var checkNotification = function(user,number,long,lat,notification){			 
+//				notification.event.should.equal("off-line");
+//	   			notification.contact.should.equal(number);
+//	   			notification.loc.should.include(long);
+//	   			notification.loc.should.include(lat);
+//	   			disconnetUser(user, done);
+//	   	    };
+//	  });
 	  
 	});
   
