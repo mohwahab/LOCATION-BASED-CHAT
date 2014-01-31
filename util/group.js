@@ -1,7 +1,8 @@
-function Group(name, owner) {
-  this.name = name;
-  this.owner = owner;
-  this.members = [];
+function Group(id, name, owner) {
+	this.id = id;
+	this.name = name;
+	this.owner = owner;
+	this.members = [];
 };
 
 Group.prototype.add = function(phoneNmber) {

@@ -365,11 +365,12 @@ describe("Chat Server",function(){
 			    console.log("\nGET CHAT USER ERROR: "+error);
 	     	} else {
 	     		var user = io.connect(svrUrl, options);
-	     		var id = {id:retrievedUser._id};
+	     		//var id = {id:retrievedUser._id};
+	     		var groupName = "Test Group";
 	     		user.on('connect', function(data){
 	     			  //user.emit('register',{id:retrievedUser._id});
-	     			  user.emit('create-group', id, function(group){
-	     				  //user.group.should.equal(group);
+	     			  user.emit('create-group', {groupName:groupName,userId:retrievedUser._id}, function(group){
+	     				  //user.group.should.equal(group);	     				 
 	     				  group.length.should.equal(36);
 	     				  user.disconnect();
 	     			  });
@@ -488,11 +489,12 @@ describe("Chat Server",function(){
 		
 		  it('Should be able to add members to group', function(done){
 				this.timeout(600000);  
-				var groupName = null;
+				var groupId = null;
+				var groupName = "Test Group";
 		 		user1.on('connect', function(data){
-		 			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
-		 				groupName = group;
-		 				user1.emit('add-to-group',{'group':groupName, 'members':testContacts});
+		 			user1.emit('create-group', {groupName:groupName, userId:retrievedUser1._id}, function(group){
+		 				groupId = group;
+		 				user1.emit('add-to-group',{'groupId':groupId, 'groupName':groupName, 'members':testContacts});
 		 				//user1.disconnect();
 		 				disconnetUser(user1, done);
 		 			});     	     
@@ -503,12 +505,13 @@ describe("Chat Server",function(){
 		 		});
 		 		user2.on('notification', function(notification){
 		 			//console.log("****************** [USER 2("+user2.number+") NOTIFICATION]: "+JSON.stringify(notification));
-	        		if(notification.event === "add-to-group"){        			
-	        			notification.group.should.equal(groupName);
+	        		if(notification.event === "add-to-group"){
+	        			notification.groupId.should.equal(groupId);
+	        			notification.groupName.should.equal(groupName);
 	         			notification.by.should.equal(user1.number);
 	        			notification.members.should.include(user1.number);
 	        		}else if(notification.event === "new-member"){        			
-	        			notification.group.should.equal(groupName);
+	        			notification.group.should.equal(groupId);
 	         			notification.by.should.equal(user1.number);
 	         			notification.member.should.equal(user3.number);
 	         			disconnetUser(user2, done);
@@ -521,7 +524,8 @@ describe("Chat Server",function(){
 		 		user3.on('notification', function(notification){
 		 			//console.log("****************** [USER 3("+user3.number+") NOTIFICATION]: "+JSON.stringify(notification));
 	        		notification.event.should.equal("add-to-group");        		
-	    			notification.group.should.equal(groupName);
+	        		notification.groupId.should.equal(groupId);
+        			notification.groupName.should.equal(groupName);
 	     			notification.by.should.equal(testUser);
 	    			notification.members.should.include(user1.number);
 	    			notification.members.should.include(user2.number);
@@ -531,16 +535,17 @@ describe("Chat Server",function(){
 		});
 		  	  
 		it('Should be able to leave group', function(done){
-			var groupName = null;
+			var groupId = null;
+			var groupName = "Test Group";
 	   		user1.on('connect', function(data){
-	   			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
-	   				groupName = group;
-	   				user1.emit('add-to-group',{'group':groupName, 'members':testContacts});
+	   			user1.emit('create-group', {groupName:groupName,userId:retrievedUser1._id}, function(group){
+	   				groupId = group;
+	   				user1.emit('add-to-group',{'groupId':groupId, 'groupName':groupName, 'members':testContacts});
 	   			});
 	   		});
 	   		user1.on('notification', function(notification){
 						notification.event.should.equal("leave-group");
-						notification.group.should.equal(groupName);
+						notification.group.should.equal(groupId);
 						notification.by.should.equal(user2.number);
 						disconnetUser(user1, done);
 				});
@@ -549,7 +554,7 @@ describe("Chat Server",function(){
 	   		});
 	   		user2.on('notification', function(notification){
 	      		if(notification.event === 'add-to-group'){
-	      			user2.emit('leave-group',{group:groupName});
+	      			user2.emit('leave-group',{group:groupId});
 	      			disconnetUser(user2, done);
 	      		}
 	   		});
@@ -559,7 +564,7 @@ describe("Chat Server",function(){
 	   		user3.on('notification', function(notification){
 	      		if(notification.event === 'leave-group'){
 	      			notification.event.should.equal("leave-group");
-		     			notification.group.should.equal(groupName);
+		     			notification.group.should.equal(groupId);
 		     			notification.by.should.equal(user2.number);
 		     			disconnetUser(user3, done);
 	      		}
@@ -569,30 +574,31 @@ describe("Chat Server",function(){
 
 	  it('Should be able to remove members from group', function(done){
 		    this.timeout(600000);
-		    var groupName = null;
+		    var groupId = null;
+		    var groupName = "Test Group";
 	   	    var addedMembers = 0;
 	   	    var checkNotification = function(user,notification){
 	      		if(notification.event === 'add-to-group'){
 	      			addedMembers++;     	     	        			
 	      			if(addedMembers == 2){
-	      				user1.emit('remove-from-group',{'group':groupName, 'members':testContacts});
+	      				user1.emit('remove-from-group',{'group':groupId, 'members':testContacts});
 	      				disconnetUser(user1, done);
 	      			}
 	      		}else if(notification.event === 'remove-from-group'){
 	      				//notification.event.should.equal("remove-from-group");
-		     			notification.group.should.equal(groupName);
+		     			notification.group.should.equal(groupId);
 		     			notification.by.should.equal(testUser);
 		     			disconnetUser(user, done);
 	      		}else if(notification.event === 'remove-member'){
-	      			notification.group.should.equal(groupName);
+	      			notification.group.should.equal(groupId);
 	     			notification.by.should.equal(testUser);
 	     			notification.member.should.equal(user2.number);
 	      		}
 	   	    };
 	   		user1.on('connect', function(data){
-	   			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
-	   				groupName = group;
-	   				user1.emit('add-to-group',{'group':groupName, 'members':testContacts});
+	   			user1.emit('create-group', {groupName:groupName,userId:retrievedUser1._id}, function(group){
+	   				groupId = group;
+	   				user1.emit('add-to-group',{'groupId':groupId, 'groupName':groupName, 'members':testContacts});
 	   			});
 	   		});
 	   		user2.on('connect', function(data){
@@ -612,28 +618,29 @@ describe("Chat Server",function(){
 		
 	  it('Should be able to message group members', function(done){
 		  	this.timeout(600000);
-		  	var groupName = null;
+		  	var groupId = null;
+		  	var groupName = "Test Group";
 	 	    var message = "Hi all :)"
 	 	    var addedMembers = 0;
 	 	    var checkNotification = function(user,notification){
 	    		if(notification.event === 'add-to-group'){
 	    			addedMembers++;     	     	        			
 	    			if(addedMembers == 2){
-	    				user1.emit('message',{'group':groupName, 'txt':message});
+	    				user1.emit('message',{'group':groupId, 'txt':message});
 	    				disconnetUser(user1, done);
 	    			}
 	    		}
 	 	  };
 	      var checkMessage = function(user){
 	        	user.on('message', function(msg){
-	        		msg.should.eql({group:groupName, txt:message, from:user1.number});
+	        		msg.should.eql({group:groupId, txt:message, from:user1.number});
 	        		disconnetUser(user, done);
 	        	});
 	      };
 	      user1.on('connect', function(data){
-			user1.emit('create-group', {id:retrievedUser1._id}, function(group){
-				groupName = group;
-				user1.emit('add-to-group',{'group':groupName, 'members':testContacts});
+			user1.emit('create-group', {groupName:groupName,userId:retrievedUser1._id}, function(group){
+				groupId = group;
+				user1.emit('add-to-group',{'groupId':groupId, 'groupName':groupName, 'members':testContacts});
 			});
 	      });
 	      user2.on('connect', function(data){
@@ -653,53 +660,53 @@ describe("Chat Server",function(){
 
 	  });
 	  
-//	  it('Should be able to notify nearby friends on user departure', function(done){
-//		  var newUser = '01101252010';
-//		  var testUserLoc = [32.099865,30.121395];
-//		  request
-//          .get(svrUrl+'/register/Test User/'+newUser+'/'+testUserLoc[0]+'/'+testUserLoc[1]+'/["'+testContacts[0]+'","'+testContacts[1]+'"]')
-//          .end(function(res){
-//        	    var user0 = io.connect(svrUrl, options);
-//	     		user0.number = newUser;
-//	     		
-//        	  	user0.on('connect', function(data){
-//        	  		user0.emit('register',{id:res.body.id}, function(){
-//        	  			disconnetUser(user0, done);
-//        	  		});   	   	    		
-//	  	   	    });
-//        	  	
-//        	  	user1.on('connect', function(data){
-//        	  		user1.disconnect();
-//	  	   	    });
-//        	  	
-//	  	   	    user2.on('connect', function(data){
-//	  	   	    	user2.emit('register',{id:retrievedUser2._id}, registerCallback); 
-//	  	   	    });
-//	  	   	    
-//	  	   	    user2.on('notification', function(notification){
-//	  				checkNotification(user2,user0.number,testUserLoc[0],testUserLoc[1],notification);
-//	  		    });
-//	  	   	    
-//	  	   	    user3.disconnect();
-//	  	   	    user3 = io.connect(svrUrl, options);
-//	     	    user3.number = testContacts[1];
-//	  	   	    user3.on('connect', function(data){	  	   	    	
-//	  	   	    	user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
-//	  	   	    });
-//	  	   	    
-//	  	   	    user3.on('notification', function(notification){	  	   	    	
-//	  				checkNotification(user3,user0.number,testUserLoc[0],testUserLoc[1],notification);
-//	  		    });
-//          });
-//		  
-//		  var checkNotification = function(user,number,long,lat,notification){			 
-//				notification.event.should.equal("off-line");
-//	   			notification.contact.should.equal(number);
-//	   			notification.loc.should.include(long);
-//	   			notification.loc.should.include(lat);
-//	   			disconnetUser(user, done);
-//	   	    };
-//	  });
+	  it('Should be able to notify nearby friends on user departure', function(done){
+		  var newUser = '01101252010';
+		  var testUserLoc = [32.099865,30.121395];
+		  request
+          .get(svrUrl+'/register/Test User/'+newUser+'/'+testUserLoc[0]+'/'+testUserLoc[1]+'/["'+testContacts[0]+'","'+testContacts[1]+'"]')
+          .end(function(res){
+        	    var user0 = io.connect(svrUrl, options);
+	     		user0.number = newUser;
+	     		
+        	  	user0.on('connect', function(data){
+        	  		user0.emit('register',{id:res.body.id}, function(){
+        	  			disconnetUser(user0, done);
+        	  		});   	   	    		
+	  	   	    });
+        	  	
+        	  	user1.on('connect', function(data){
+        	  		user1.disconnect();
+	  	   	    });
+        	  	
+	  	   	    user2.on('connect', function(data){
+	  	   	    	user2.emit('register',{id:retrievedUser2._id}, registerCallback); 
+	  	   	    });
+	  	   	    
+	  	   	    user2.on('notification', function(notification){
+	  				checkNotification(user2,user0.number,testUserLoc[0],testUserLoc[1],notification);
+	  		    });
+	  	   	    
+	  	   	    user3.disconnect();
+	  	   	    user3 = io.connect(svrUrl, options);
+	     	    user3.number = testContacts[1];
+	  	   	    user3.on('connect', function(data){	  	   	    	
+	  	   	    	user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
+	  	   	    });
+	  	   	    
+	  	   	    user3.on('notification', function(notification){	  	   	    	
+	  				checkNotification(user3,user0.number,testUserLoc[0],testUserLoc[1],notification);
+	  		    });
+          });
+		  
+		  var checkNotification = function(user,number,long,lat,notification){			 
+				notification.event.should.equal("off-line");
+	   			notification.contact.should.equal(number);
+	   			notification.loc.should.include(long);
+	   			notification.loc.should.include(lat);
+	   			disconnetUser(user, done);
+	   	    };
+	  });
 	  
 	});
   

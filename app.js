@@ -27,7 +27,7 @@ var defaultDist = 10; //default nearby search distance.
 
 //var socketMap = {}; 	//{phone-number : socket-object}
 //var msgMap = {};		//{phone-number : message-object[]}
-//var grpMap = {};		//{phone-number : group-name[]}
+//var grpMap = {};		//{phone-number : group-id[]}
 //var userMap = {};		//{socket-id : phone-number}
     
 //var express = require('express')
@@ -295,23 +295,23 @@ io.sockets.on('connection', function (socket) {
 	    delete socketDB.remove(socket.phone);
   });
   
-  socket.on('create-group', function(user,callback){
-	  User.getNumber(user.id, function(result) {
+  socket.on('create-group', function(data,callback){
+	  User.getNumber(data.userId, function(result) {
 			if(result.error) {
 				log.error("CHAT GET USER ERROR: "+result.error);
 			} else {
-				var groupName = uuid.v4();
+				var groupId = uuid.v4();
 			  	log.debug("NEW GROUP CREATOR: '"+result.number+"'");
-				log.debug("NEW GROUP CREATED: '"+groupName+"'");
+				log.debug("NEW GROUP CREATED: '"+groupId+"'");
 				socket.phone = result.number;
-				socket.userId = user.id;
+				socket.userId = data.userId;
 				userSocket = socketDB.getOrCreate(result.number, socket);
-				userSocket.group = groupName;
-				userSocket.join(groupName);
-				var newGroup = new Group(groupName,userSocket.phone);
+				userSocket.group = groupId;
+				userSocket.join(groupId);
+				var newGroup = new Group(groupId, data.groupName, userSocket.phone);
 				newGroup.add(result.number);
-				groups.add(groupName, newGroup);
-		      	callback(groupName);
+				groups.add(groupId, newGroup);
+		      	callback(groupId);
 			}
 	  });
   });
@@ -321,23 +321,24 @@ io.sockets.on('connection', function (socket) {
 	    var members = null;
 	    var userSocket = null;
 	    var notification = null;
-	    var group = groups.get(data.group);
+	    var group = groups.get(data.groupId);
 	    if(group){
 	    	data.members.forEach(function(member){
-		    	notification = {event:"new-member",group:data.group,by:socket.phone,member:member};
-		    	socket.broadcast.to(data.group).emit('notification', notification);
+		    	notification = {event:"new-member",group:data.groupId,by:socket.phone,member:member};
+		    	socket.broadcast.to(data.groupId).emit('notification', notification);
 		    	userSocket = socketDB.get(member);
 		    	members = group.getMembers().slice(0);
-		    	notification = {event:"add-to-group",group:data.group,by:socket.phone,members:members};
+		    	notification = {event:"add-to-group",groupId:data.groupId,groupName:data.groupName,by:socket.phone,members:members};
 		    	log.debug("ADD TO GROUP USER NOTIFICATION EVENT: ["+notification.event+"]");
-	    		log.debug("ADD TO GROUP USER NOTIFICATION GROUP: ["+notification.group+"]");
+	    		log.debug("ADD TO GROUP USER NOTIFICATION GROUP-ID: ["+notification.groupId+"]");
+	    		log.debug("ADD TO GROUP USER NOTIFICATION GROUP-NAME: ["+notification.groupName+"]");
 	    		log.debug("ADD TO GROUP USER NOTIFICATION BY: ["+notification.by+"]");
 	    		log.debug("ADD TO GROUP USER NOTIFICATION MEMBERS: ["+notification.members+"]");
 	    		group.add(member);
 		    	if(userSocket){
 		    		log.debug("ADD TO GROUP USER: '"+member+"' ADDED");
-		    		userSocket.group = data.group;
-		    		userSocket.join(data.group);
+		    		userSocket.group = data.groupId;
+		    		userSocket.join(data.groupId);
 		    		userSocket.emit('notification',notification);
 		    	}else{
 		    		log.debug("ADD TO GROUP USER: '"+member+"' NOT REGISTERED");
@@ -376,8 +377,8 @@ io.sockets.on('connection', function (socket) {
   socket.on('leave-group', function(data){
 	  var group = groups.get(data.group);
 	  var notification = {event:"leave-group",group:data.group,by:socket.phone}; //TODO "by" to be "member"
-	  socket.broadcast.to(group.name).emit('notification', notification);
-	  socket.leave(group.name);
+	  socket.broadcast.to(group.id).emit('notification', notification);
+	  socket.leave(group.id);
 	  group.remove(socket.phone);
   }); 
   
