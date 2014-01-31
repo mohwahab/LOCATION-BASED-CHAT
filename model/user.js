@@ -34,14 +34,14 @@ var User = function(){
 	userSchema.index({ loc: '2dsphere' });
 	var _model = mongoose.model('User', userSchema);
 	
-	var _showLocation = function(id,callback){
-		_model.update({_id: id},{visible: true},callback);
-	};
-	
-	var _hideLocation = function(id,callback){
-		log.debug("HIDE LOCATION[id]: "+id);
-		_model.update({_id: id},{visible: false},callback);
-	};
+//	var _showLocation = function(id,callback){
+//		_model.update({_id: id},{visible: true},callback);
+//	};
+//	
+//	var _hideLocation = function(id,callback){
+//		log.debug("HIDE LOCATION[id]: "+id);
+//		_model.update({_id: id},{visible: false},callback);
+//	};
 	
 // CLOSE CONNECTION	
 //	function done (err) {
@@ -187,8 +187,8 @@ var User = function(){
 		register: _register,
 	    schema: userSchema,
 	    model: _model,
-	    showLocation: _showLocation,
-	    hideLocation: _hideLocation,
+//	    showLocation: _showLocation,
+//	    hideLocation: _hideLocation,
 	    getNumber: _getNumber,
 	    getLastCheckInLoc: _getLastCheckInLoc,
 	    //findContacts: _findContacts,

@@ -155,14 +155,29 @@ app.post('/hide/:id', function(req, res) {
 
 app.post('/show/:id', function(req, res) {
 	log.info("[ "+req.method+" /show/"+req.params.id+" ]");
-	User.showLocation(req.params.id, function(error){
-		if(error) {
-			log.error("ERROR show: "+error);
-			res.json(500, { error: error });
-        } else {
-        	res.send(200);
-        }
+	User.getLastCheckInLoc(req.params.id, function(result){    		
+		if(result.error){    			
+			log.error("SHOW ERROR: "+result.error);
+			res.json(500, result);
+		}else{    			
+			notifyNearBy({id:req.params.id, long:result.long, lat:result.lat, dist:defaultDist, visible:true}, "on-line", function(result){
+        		if(result.error) {
+        	    	 log.error("(SHOW) NOTIFY NEARBY ERROR: "+JSON.stringify(result.error));
+        	    	 res.json(500, result);
+        	    }else{
+        	    	res.send(200);
+        	    }
+        	});
+		}
 	});
+//	User.showLocation(req.params.id, function(error){
+//		if(error) {
+//			log.error("ERROR show: "+error);
+//			res.json(500, { error: error });
+//        } else {
+//        	res.send(200);
+//        }
+//	});
 });
 
 
