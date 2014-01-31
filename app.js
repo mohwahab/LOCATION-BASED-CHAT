@@ -351,7 +351,7 @@ io.sockets.on('connection', function (socket) {
 		    	socket.broadcast.to(data.groupId).emit('notification', notification);
 		    	userSocket = socketDB.get(member);
 		    	members = group.getMembers().slice(0);
-		    	notification = {event:"add-to-group",groupId:data.groupId,groupName:data.groupName,by:socket.phone,members:members};
+		    	notification = {event:"add-to-group",groupId:data.groupId,groupName:group.name,by:socket.phone,members:members};
 		    	log.debug("ADD TO GROUP USER NOTIFICATION EVENT: ["+notification.event+"]");
 	    		log.debug("ADD TO GROUP USER NOTIFICATION GROUP-ID: ["+notification.groupId+"]");
 	    		log.debug("ADD TO GROUP USER NOTIFICATION GROUP-NAME: ["+notification.groupName+"]");

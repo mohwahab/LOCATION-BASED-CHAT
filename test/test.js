@@ -539,7 +539,7 @@ describe("Chat Server",function(){
 		 		user1.on('connect', function(data){
 		 			user1.emit('create-group', {groupName:groupName, userId:retrievedUser1._id}, function(group){
 		 				groupId = group;
-		 				user1.emit('add-to-group',{'groupId':groupId, 'groupName':groupName, 'members':testContacts});
+		 				user1.emit('add-to-group',{'groupId':groupId, 'members':testContacts});
 		 				//user1.disconnect();
 		 				disconnetUser(user1, done);
 		 			});     	     
@@ -585,7 +585,7 @@ describe("Chat Server",function(){
 	   		user1.on('connect', function(data){
 	   			user1.emit('create-group', {groupName:groupName,userId:retrievedUser1._id}, function(group){
 	   				groupId = group;
-	   				user1.emit('add-to-group',{'groupId':groupId, 'groupName':groupName, 'members':testContacts});
+	   				user1.emit('add-to-group',{'groupId':groupId, 'members':testContacts});
 	   			});
 	   		});
 	   		user1.on('notification', function(notification){
@@ -643,7 +643,7 @@ describe("Chat Server",function(){
 	   		user1.on('connect', function(data){
 	   			user1.emit('create-group', {groupName:groupName,userId:retrievedUser1._id}, function(group){
 	   				groupId = group;
-	   				user1.emit('add-to-group',{'groupId':groupId, 'groupName':groupName, 'members':testContacts});
+	   				user1.emit('add-to-group',{'groupId':groupId, 'members':testContacts});
 	   			});
 	   		});
 	   		user2.on('connect', function(data){
@@ -685,7 +685,7 @@ describe("Chat Server",function(){
 	      user1.on('connect', function(data){
 			user1.emit('create-group', {groupName:groupName,userId:retrievedUser1._id}, function(group){
 				groupId = group;
-				user1.emit('add-to-group',{'groupId':groupId, 'groupName':groupName, 'members':testContacts});
+				user1.emit('add-to-group',{'groupId':groupId, 'members':testContacts});
 			});
 	      });
 	      user2.on('connect', function(data){
