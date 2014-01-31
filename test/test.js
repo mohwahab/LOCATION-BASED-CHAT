@@ -286,7 +286,7 @@ describe('User Location', function(){
     it("Should be able to return error if username contains invalid characters", function(done){
         //this.timeout(100000);
         request
-            .get(svrUrl+'/register/$********/01001252011/32.099865/30.121395/["01001252010","01208993983","01108993983"]')
+            .get(svrUrl+'/register/$*asdddssa&*/01001252011/32.099865/30.121395/["01001252010","01208993983","01108993983"]')
             .end(function(res){            	
                 res.should.be.json;
                 res.statusCode.should.equal(500);
@@ -372,6 +372,51 @@ describe("Chat Server",function(){
 	     			  user.emit('create-group', {groupName:groupName,userId:retrievedUser._id}, function(group){
 	     				  //user.group.should.equal(group);	     				 
 	     				  group.length.should.equal(36);
+	     				  user.disconnect();
+	     			  });
+	     			  done();
+	     		});
+	     	}
+	  });
+  });
+  
+  
+  it('Should return an error for invalid group name (GT 50 chars)', function(done){
+	  User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
+	  		if(error) {
+			    console.log("\nGET CHAT USER ERROR: "+error);
+	     	} else {
+	     		var user = io.connect(svrUrl, options);
+	     		//var id = {id:retrievedUser._id};
+	     		var groupName = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+	     		user.on('connect', function(data){
+	     			  //user.emit('register',{id:retrievedUser._id});
+	     			  user.emit('create-group', {groupName:groupName,userId:retrievedUser._id}, function(response){
+	     				  //user.group.should.equal(group);	 	     				  
+	     				  //group.length.should.equal(36);
+	     				  response.error.should.equal("Invalid group name");
+	     				  user.disconnect();
+	     			  });
+	     			  done();
+	     		});
+	     	}
+	  });
+  });
+  
+  it('Should return an error for invalid group name (Invalid chars)', function(done){
+	  User.model.findOne({'number':'01008993983'},function(error,retrievedUser){ 
+	  		if(error) {
+			    console.log("\nGET CHAT USER ERROR: "+error);
+	     	} else {
+	     		var user = io.connect(svrUrl, options);
+	     		//var id = {id:retrievedUser._id};
+	     		var groupName = "$*aaass@";
+	     		user.on('connect', function(data){
+	     			  //user.emit('register',{id:retrievedUser._id});
+	     			  user.emit('create-group', {groupName:groupName,userId:retrievedUser._id}, function(response){
+	     				  //user.group.should.equal(group);	 	     				  
+	     				  //group.length.should.equal(36);
+	     				  response.error.should.equal("Invalid group name");
 	     				  user.disconnect();
 	     			  });
 	     			  done();

@@ -18,6 +18,8 @@ app.use(express.bodyParser());
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
 var uuid = require('node-uuid');
+var Validator = require('./util/validator.js');
+var validator = new Validator();
 
 var defaultDist = 10; //default nearby search distance.
 
@@ -310,25 +312,31 @@ io.sockets.on('connection', function (socket) {
 	    delete socketDB.remove(socket.phone);
   });
   
-  socket.on('create-group', function(data,callback){
-	  User.getNumber(data.userId, function(result) {
-			if(result.error) {
-				log.error("CHAT GET USER ERROR: "+result.error);
-			} else {
-				var groupId = uuid.v4();
-			  	log.debug("NEW GROUP CREATOR: '"+result.number+"'");
-				log.debug("NEW GROUP CREATED: '"+groupId+"'");
-				socket.phone = result.number;
-				socket.userId = data.userId;
-				userSocket = socketDB.getOrCreate(result.number, socket);
-				userSocket.group = groupId;
-				userSocket.join(groupId);
-				var newGroup = new Group(groupId, data.groupName, userSocket.phone);
-				newGroup.add(result.number);
-				groups.add(groupId, newGroup);
-		      	callback(groupId);
-			}
-	  });
+  socket.on('create-group', function(data,callback){	  
+	  if(validator.isValidGroupname(data.groupName)){
+		  User.getNumber(data.userId, function(result) {
+				if(result.error) {
+					log.error("CHAT GET USER ERROR: "+result.error);
+				} else {
+					var groupId = uuid.v4();
+				  	log.debug("NEW GROUP CREATOR: '"+result.number+"'");
+					log.debug("NEW GROUP CREATED: '"+groupId+"'");
+					socket.phone = result.number;
+					socket.userId = data.userId;
+					userSocket = socketDB.getOrCreate(result.number, socket);
+					userSocket.group = groupId;
+					userSocket.join(groupId);
+					var newGroup = new Group(groupId, data.groupName, userSocket.phone);
+					newGroup.add(result.number);
+					groups.add(groupId, newGroup);
+			      	callback(groupId);
+				}
+		  }); 
+	  }else{
+		  var error = "Invalid group name";
+		  log.error("CREATE GROUP(ERROR): "+error);
+		  callback({error:error});
+	  }
   });
   
   socket.on('add-to-group', function(data){
