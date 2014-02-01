@@ -399,10 +399,13 @@ io.sockets.on('connection', function (socket) {
  
   socket.on('leave-group', function(data){
 	  var group = groups.get(data.group);
-	  var notification = {event:"leave-group",group:data.group,by:socket.phone}; //TODO "by" to be "member"
-	  socket.broadcast.to(group.id).emit('notification', notification);
-	  socket.leave(group.id);
-	  group.remove(socket.phone);
+	  log.debug("[LEAVE-GROUP]: "+JSON.stringify(data));
+	  if(group){
+		  var notification = {event:"leave-group",group:data.group,by:socket.phone}; //TODO "by" to be "member"
+		  socket.broadcast.to(group.id).emit('notification', notification);
+		  socket.leave(group.id);
+		  group.remove(socket.phone);
+	  }
   }); 
   
 });
