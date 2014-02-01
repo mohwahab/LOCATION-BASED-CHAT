@@ -335,26 +335,8 @@ describe('User Location', function(){
                 	done();
    		        });
             });
-    });
-    
-    it("Should be able to show the user's location", function(done){
-        //this.timeout(100000);
-    	var id = testUsers['01001252010'];
-        request
-            .post(svrUrl+'/show/'+id)
-            .end(function(res){
-                res.statusCode.should.equal(200);
-                User.model.findById(id, function(error, retrievedUser) {
-                	if(error) {
-   			         	console.log("\nShow::GET RETRIEVED USER ERROR: "+error);
-   		         	} else {
-   		         		retrievedUser.visible.should.equal(true);
-   		         	}
-                	done();
-   		        });
-            });
-    });
-    
+    });    
+        
 });
 
 describe("Chat Server",function(){  
@@ -452,7 +434,7 @@ describe("Chat Server",function(){
 	  });
   });
   
-  describe("Group Chat",function(){
+  describe("Notification",function(){
 		
 		var user1;
 		var user2;
@@ -461,7 +443,9 @@ describe("Chat Server",function(){
 		var retrievedUser2;
 		var retrievedUser3;
 		var testUser = '01001252010';
-		var testContacts = ["01008993983","01108993983"];
+		var newUser = '01101252010';
+		var testUserLoc = [32.099865,30.121395];
+		var testContacts = ["01008993983","01108993983"];		
 		
 		var registerCallback = function(){};
 		
@@ -492,14 +476,14 @@ describe("Chat Server",function(){
 		     	     	     	} else {
 		     	     	     		retrievedUser3 = retrievedUser;
 		     	     	     		
-		     	     	     		user1 = io.connect(svrUrl, options);
-		     	     	     		user1.number = testUser;
-		     	     	     				     	     	     		
-		     	     	     	    user2 = io.connect(svrUrl, options);
-		     	     	     	    user2.number = testContacts[0];	
-		     	     	     	    
-		     	     	     	    user3 = io.connect(svrUrl, options);
-		     	     	     	    user3.number = testContacts[1];		     	     	     	    		     	     	     	
+//		     	     	     		user1 = io.connect(svrUrl, options);
+//		     	     	     		user1.number = testUser;
+//		     	     	     				     	     	     		
+//		     	     	     	    user2 = io.connect(svrUrl, options);
+//		     	     	     	    user2.number = testContacts[0];	
+//		     	     	     	    
+//		     	     	     	    user3 = io.connect(svrUrl, options);
+//		     	     	     	    user3.number = testContacts[1];		     	     	     	    		     	     	     	
 		     	     	     	   
 		     	     	     	    done();
 		     	     	     	}		     	     	  		
@@ -511,7 +495,90 @@ describe("Chat Server",function(){
 			  //done();
 		});
 		
+		
+		
+//		it("Should be able to show the user's location", function(done){
+//	          //this.timeout(100000);	    		    	  
+//			  var checkNotification = function(user,number,long,lat,notification){		
+//				  	console.log(">>>>>>>>>>>>>>> [NOTIFICATION]: "+JSON.stringify(notification));
+//					notification.event.should.equal("on-line");
+//		   			notification.contact.should.equal(number);
+//		   			notification.loc.should.include(long);
+//		   			notification.loc.should.include(lat);
+//		   			disconnetUser(user, done);
+//		   	  };
+//		   	  var diconnectedCount = 0;
+//		   	  var disconnetUser = function(user, done){
+//			    	user.disconnect();
+//			    	diconnectedCount++;
+//			        if(diconnectedCount == 2){
+//			        	diconnectedCount = 0;
+//			        	user1.disconnect();
+//			        	done();
+//			        };
+//			  };
+//		   	  var id = 0;
+//		   	  var registeredCount = 0;
+//		   	  var checkRegistered = function(){		   		  	
+//		   		  	registeredCount++;
+//		        	if(registeredCount == 3){
+//		        		request
+//			             .post(svrUrl+'/show/'+id)
+//			             .end(function(res){
+//			                 	res.statusCode.should.equal(200);
+//			                 	User.model.findById(id, function(error, retrievedUser) {
+//				 	  	   	    	if(error) {
+//			    			         	console.log("\nShow::GET RETRIEVED USER ERROR: "+error);
+//			    		         	} else {			    		    
+//			    		         		retrievedUser.visible.should.equal(true);
+//			    		         	}
+//				 	  	   	    	//done();
+//			    		        });
+//			             });
+//		        	};
+//		   	  };
+//		   	  
+//			  request
+//	         .get(svrUrl+'/register/Test User/'+newUser+'/'+testUserLoc[0]+'/'+testUserLoc[1]+'/["'+testContacts[0]+'","'+testContacts[1]+'"]')
+//	         .end(function(res){
+//	        	 	id = res.body.id;
+//	        	 	user1 = io.connect(svrUrl, options);
+//	     		 	user1.number = newUser; 	 
+//	        	  	user1.on('connect', function(data){
+//	        	  		user1.emit('register',{id:res.body.id}, checkRegistered);   	   	    		
+//	 	  	   	    });	        	  
+//	        	  	
+//	        	  	user2 = io.connect(svrUrl, options);
+//	        	  	user2.number = testContacts[0];	 	     	     	    
+//	 	  	   	    user2.on('connect', function(data){
+//	 	  	   	    	user2.emit('register',{id:retrievedUser2._id}, checkRegistered); 
+//	 	  	   	    });		 	  	   	   
+//	 	  	   	    user2.on('notification', function(notification){
+//	 	  				checkNotification(user2,user1.number,testUserLoc[0],testUserLoc[1],notification);
+//	 	  		    });	 	  	   	    
+//
+//	 	  	   	    user3 = io.connect(svrUrl, options);
+//   	     	    	user3.number = testContacts[1];
+//	 	  	   	    user3.on('connect', function(data){	  	   	    	
+//	 	  	   	    	user3.emit('register',{id:retrievedUser3._id}, checkRegistered); 
+//	 	  	   	    });
+//	 	  	   	    
+//	 	  	   	    user3.on('notification', function(notification){	  	   	    	
+//	 	  				checkNotification(user3,user1.number,testUserLoc[0],testUserLoc[1],notification);
+//	 	  		    });
+//	         });
+//	    });
+
+		
+		
 		it('Should be able to receive and forward messages', function(done){
+				user1 = io.connect(svrUrl, options);
+	     		user1.number = testUser;	     				     	     	     		
+	     	    user2 = io.connect(svrUrl, options);
+	     	    user2.number = testContacts[0];		     	    
+	     	    user3 = io.connect(svrUrl, options);
+	     	    user3.number = testContacts[1];	
+	     	    
 				user1.on('connect', function(data){
 	    			user1.emit('register',{id:retrievedUser1._id}, registerCallback);
 	    			user1.emit('message', {to:testContacts[0], txt:'Hello Sarah ;)'});
@@ -536,6 +603,14 @@ describe("Chat Server",function(){
 				this.timeout(600000);  
 				var groupId = null;
 				var groupName = "Test Group";
+				
+				user1 = io.connect(svrUrl, options);
+	     		user1.number = testUser;	     				     	     	     		
+	     	    user2 = io.connect(svrUrl, options);
+	     	    user2.number = testContacts[0];		     	    
+	     	    user3 = io.connect(svrUrl, options);
+	     	    user3.number = testContacts[1];
+	     	    
 		 		user1.on('connect', function(data){
 		 			user1.emit('create-group', {groupName:groupName, userId:retrievedUser1._id}, function(group){
 		 				groupId = group;
@@ -582,6 +657,14 @@ describe("Chat Server",function(){
 		it('Should be able to leave group', function(done){
 			var groupId = null;
 			var groupName = "Test Group";
+			
+			user1 = io.connect(svrUrl, options);
+     		user1.number = testUser;	     				     	     	     		
+     	    user2 = io.connect(svrUrl, options);
+     	    user2.number = testContacts[0];		     	    
+     	    user3 = io.connect(svrUrl, options);
+     	    user3.number = testContacts[1];
+			
 	   		user1.on('connect', function(data){
 	   			user1.emit('create-group', {groupName:groupName,userId:retrievedUser1._id}, function(group){
 	   				groupId = group;
@@ -622,6 +705,14 @@ describe("Chat Server",function(){
 		    var groupId = null;
 		    var groupName = "Test Group";
 	   	    var addedMembers = 0;
+	   	    
+		   	user1 = io.connect(svrUrl, options);
+	  		user1.number = testUser;	     				     	     	     		
+	  	    user2 = io.connect(svrUrl, options);
+	  	    user2.number = testContacts[0];		     	    
+	  	    user3 = io.connect(svrUrl, options);
+	  	    user3.number = testContacts[1];
+	   	    
 	   	    var checkNotification = function(user,notification){
 	      		if(notification.event === 'add-to-group'){
 	      			addedMembers++;     	     	        			
@@ -667,6 +758,14 @@ describe("Chat Server",function(){
 		  	var groupName = "Test Group";
 	 	    var message = "Hi all :)"
 	 	    var addedMembers = 0;
+	 	    
+	 	    user1 = io.connect(svrUrl, options);
+    		user1.number = testUser;	     				     	     	     		
+    	    user2 = io.connect(svrUrl, options);
+    	    user2.number = testContacts[0];		     	    
+    	    user3 = io.connect(svrUrl, options);
+    	    user3.number = testContacts[1];
+	 	    
 	 	    var checkNotification = function(user,notification){
 	    		if(notification.event === 'add-to-group'){
 	    			addedMembers++;     	     	        			
@@ -705,53 +804,49 @@ describe("Chat Server",function(){
 
 	  });
 	  
-//	  it('Should be able to notify nearby friends on user departure', function(done){
-//		  var newUser = '01101252010';
-//		  var testUserLoc = [32.099865,30.121395];
-//		  request
-//          .get(svrUrl+'/register/Test User/'+newUser+'/'+testUserLoc[0]+'/'+testUserLoc[1]+'/["'+testContacts[0]+'","'+testContacts[1]+'"]')
-//          .end(function(res){
-//        	    var user0 = io.connect(svrUrl, options);
-//	     		user0.number = newUser;
-//	     		
-//        	  	user0.on('connect', function(data){
-//        	  		user0.emit('register',{id:res.body.id}, function(){
-//        	  			disconnetUser(user0, done);
-//        	  		});   	   	    		
-//	  	   	    });
-//        	  	
-//        	  	user1.on('connect', function(data){
-//        	  		user1.disconnect();
-//	  	   	    });
-//        	  	
-//	  	   	    user2.on('connect', function(data){
-//	  	   	    	user2.emit('register',{id:retrievedUser2._id}, registerCallback); 
-//	  	   	    });
-//	  	   	    
-//	  	   	    user2.on('notification', function(notification){
-//	  				checkNotification(user2,user0.number,testUserLoc[0],testUserLoc[1],notification);
-//	  		    });
-//	  	   	    
-//	  	   	    user3.disconnect();
-//	  	   	    user3 = io.connect(svrUrl, options);
-//	     	    user3.number = testContacts[1];
-//	  	   	    user3.on('connect', function(data){	  	   	    	
-//	  	   	    	user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
-//	  	   	    });
-//	  	   	    
-//	  	   	    user3.on('notification', function(notification){	  	   	    	
-//	  				checkNotification(user3,user0.number,testUserLoc[0],testUserLoc[1],notification);
-//	  		    });
-//          });
-//		  
-//		  var checkNotification = function(user,number,long,lat,notification){			 
-//				notification.event.should.equal("off-line");
-//	   			notification.contact.should.equal(number);
-//	   			notification.loc.should.include(long);
-//	   			notification.loc.should.include(lat);
-//	   			disconnetUser(user, done);
-//	   	    };
-//	  });
+	  it('Should be able to notify nearby friends on user departure', function(done){
+		  request
+          .get(svrUrl+'/register/Test User/'+newUser+'/'+testUserLoc[0]+'/'+testUserLoc[1]+'/["'+testContacts[0]+'","'+testContacts[1]+'"]')
+          .end(function(res){
+        	  
+        	  	user1 = io.connect(svrUrl, options);
+	      		user1.number = newUser;	     				     	     	     		
+	      	    user2 = io.connect(svrUrl, options);
+	      	    user2.number = testContacts[0];		     	    
+	      	    user3 = io.connect(svrUrl, options);
+	      	    user3.number = testContacts[1];        	    
+	     		
+        	  	user1.on('connect', function(data){
+        	  		user1.emit('register',{id:res.body.id}, function(){
+        	  			disconnetUser(user1, done);
+        	  		});   	   	    		
+	  	   	    });        	          	  	
+        	  	
+	  	   	    user2.on('connect', function(data){
+	  	   	    	user2.emit('register',{id:retrievedUser2._id}, registerCallback); 
+	  	   	    });
+	  	   	    
+	  	   	    user2.on('notification', function(notification){
+	  				checkNotification(user2,user1.number,testUserLoc[0],testUserLoc[1],notification);
+	  		    });
+	  	   	    
+	  	   	    user3.on('connect', function(data){	  	   	    	
+	  	   	    	user3.emit('register',{id:retrievedUser3._id}, registerCallback); 
+	  	   	    });
+	  	   	    
+	  	   	    user3.on('notification', function(notification){	  	   	    	
+	  				checkNotification(user3,user1.number,testUserLoc[0],testUserLoc[1],notification);
+	  		    });
+          });
+		  
+		  var checkNotification = function(user,number,long,lat,notification){			 
+				notification.event.should.equal("off-line");
+	   			notification.contact.should.equal(number);
+	   			notification.loc.should.include(long);
+	   			notification.loc.should.include(lat);
+	   			disconnetUser(user, done);
+	   	    };
+	  });
 	  
 	});
   
