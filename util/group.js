@@ -7,6 +7,7 @@ function Group(id, name, owner) {
 
 Group.prototype.add = function(phoneNmber) {
   //if (this.status === "available") {
+	console.log(">>>>>>>>>>>> GROUP:add-->("+this.name+") ("+phoneNmber+")");
     this.members.push(phoneNmber);
   //}
 };
