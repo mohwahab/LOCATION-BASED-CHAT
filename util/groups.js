@@ -3,13 +3,13 @@ function Groups() {
 };
 
 Groups.prototype.add = function(id,group) {
-	console.log(">>>>>>>>>>>> GROUPS:add-->("+id+") ("+group.name+")");
+	//console.log(">>>>>>>>>>>> GROUPS:add-->("+id+") ("+group.name+")");
 	this.groups[id] = group;
 };
 
 Groups.prototype.get = function(id) {
-	console.log(">>>>>>>>>>>> GROUPS:get-KEYID -->("+id+")");
-	console.log(">>>>>>>>>>>> GROUPS:get-NAME -->("+this.groups[id].name+")");
+	//console.log(">>>>>>>>>>>> GROUPS:get-KEYID -->("+id+")");
+	//console.log(">>>>>>>>>>>> GROUPS:get-NAME -->("+this.groups[id].name+")");
 	return this.groups[id];
 };
 

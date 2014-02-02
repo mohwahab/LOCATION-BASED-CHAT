@@ -10,7 +10,7 @@ GroupDB.prototype.add = function(phoneNumer, notification) {
 		this.groups[phoneNumer] = [];
 	}
 	this.groups[phoneNumer].push(notification);
-	console.log("GroupDB::add >> GROUP "+notification+" ADDED TO ("+phoneNumer+") WAITING GROUPS");
+	//console.log("GroupDB::add >> GROUP "+notification+" ADDED TO ("+phoneNumer+") WAITING GROUPS");
 	log.debug("GroupDB::add >> GROUP "+notification+" ADDED TO ("+phoneNumer+") WAITING GROUPS");
 };
 
